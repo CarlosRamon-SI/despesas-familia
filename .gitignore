@@ -51,3 +51,6 @@ next-env.d.ts
 /.wwebjs_cache
 .wwebjs_status.json
 .wwebjs_bot.log
+
+#logs
+/logs
