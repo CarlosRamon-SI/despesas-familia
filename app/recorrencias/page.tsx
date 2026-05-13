@@ -1,40 +1,33 @@
 import { prisma } from "@/lib/prisma"
 import { Topbar } from "@/components/topbar"
-import { RecurrencesClient } from "@/components/recurrences-client"
+import { RecorrenciasClient } from "@/components/recorrencias-client"
 
 export default async function RecorrenciasPage() {
-  const [rawRecurrences, categories] = await Promise.all([
-    prisma.recurrence.findMany({
-      include: { category: true, user: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
-  ])
+  const now = new Date()
+  const nextStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
-  const recurrences = rawRecurrences.map((r) => ({
-    id: r.id,
-    type: r.type as "EXPENSE" | "INCOME",
-    description: r.description,
-    amount: Number(r.amount),
-    dayOfMonth: r.dayOfMonth,
-    active: r.active,
-    categoryName: r.category.name,
-    categoryEmoji: r.category.emoji,
-    userName: r.user.name,
+  const rawTx = await prisma.transaction.findMany({
+    where: { recorrente: true, date: { gte: nextStart } },
+    include: { category: true, user: true },
+    orderBy: { date: "asc" },
+  })
+
+  const transactions = rawTx.map(tx => ({
+    id:            tx.id,
+    type:          tx.type as "EXPENSE" | "INCOME",
+    description:   tx.description,
+    amount:        Number(tx.amount),
+    date:          tx.date.toISOString(),
+    categoryName:  tx.category.name,
+    categoryEmoji: tx.category.emoji,
+    userName:      tx.user.name,
   }))
 
   return (
     <>
       <Topbar title="Recorrências" />
       <div className="content">
-        <div className="page-head">
-          <div>
-            <h2>Recorrências</h2>
-            <p>Lançamentos que se repetem mensalmente</p>
-          </div>
-        </div>
-
-        <RecurrencesClient recurrences={recurrences} categories={categories} />
+        <RecorrenciasClient transactions={transactions} />
       </div>
     </>
   )

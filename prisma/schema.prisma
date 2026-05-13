@@ -25,7 +25,6 @@ model User {
   allowed      Boolean       @default(false)
   createdAt    DateTime      @default(now())
   transactions Transaction[]
-  recurrences  Recurrence[]
 
   @@map("users")
 }
@@ -44,7 +43,6 @@ model Category {
   emoji        String
   keywords     String[]
   transactions Transaction[]
-  recurrences  Recurrence[]
 
   @@map("categories")
 }
@@ -55,6 +53,7 @@ model Transaction {
   description String
   amount      Decimal         @db.Decimal(10, 2)
   date        DateTime        @default(now())
+  recorrente  Boolean         @default(false)
   createdAt   DateTime        @default(now())
 
   userId     String
@@ -62,29 +61,6 @@ model Transaction {
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
-
-  recurrenceId String?
-  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
 
   @@map("transactions")
-}
-
-model Recurrence {
-  id          String          @id @default(cuid())
-  type        TransactionType @default(EXPENSE)
-  description String
-  amount      Decimal         @db.Decimal(10, 2)
-  dayOfMonth  Int
-  active      Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  transactions Transaction[]
-
-  @@map("recurrences")
 }

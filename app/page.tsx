@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { CashflowChart } from "@/components/cashflow-chart"
 import { DoughnutChart } from "@/components/doughnut-chart"
-import { QuickAdd } from "@/components/quick-add"
 import { Topbar } from "@/components/topbar"
 import { getCategoryStyle } from "@/lib/category-colors"
 
@@ -11,7 +10,7 @@ async function getDashboardData() {
   const start = new Date(now.getFullYear(), now.getMonth(), 1)
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-  const [transactions, lastMonthExpenses, lastMonthIncome, categories] = await Promise.all([
+  const [transactions, lastMonthExpenses, lastMonthIncome] = await Promise.all([
     prisma.transaction.findMany({
       where: { date: { gte: start, lte: end } },
       include: { category: true, user: true },
@@ -37,7 +36,6 @@ async function getDashboardData() {
       },
       _sum: { amount: true },
     }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
   ])
 
   const cashflow = await Promise.all(
@@ -83,7 +81,7 @@ async function getDashboardData() {
   return {
     transactions, totalExpenses, totalIncome, balance,
     totalLastExpense, totalLastIncome, savingsRate,
-    byCategory: categoriesSorted, cashflow, categories,
+    byCategory: categoriesSorted, cashflow,
   }
 }
 
@@ -101,7 +99,7 @@ export default async function DashboardPage() {
   const {
     transactions, totalExpenses, totalIncome, balance,
     totalLastExpense, totalLastIncome, savingsRate,
-    byCategory, cashflow, categories,
+    byCategory, cashflow,
   } = await getDashboardData()
 
   const now = new Date()
@@ -112,92 +110,9 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Topbar title="Painel">
-        <QuickAdd categories={categories} triggerLabel="Novo Lançamento" triggerClass="btn btn-primary" />
-      </Topbar>
+      <Topbar title="Painel" />
 
       <div className="content">
-        <div className="page-head">
-          <div>
-            <h2>Painel</h2>
-            <p style={{ textTransform: "capitalize" }}>Visão geral de {monthName}</p>
-          </div>
-        </div>
-
-        {/* Stat cards */}
-        <div className="stats-grid">
-          <div className="stat-card fade-up" style={{ animationDelay: "0ms" }}>
-            <div className="stat-icon si-income">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                <polyline points="17 6 23 6 23 12"/>
-              </svg>
-            </div>
-            <div className="stat-lbl">Receitas</div>
-            <div className="stat-val">{fmt(totalIncome)}</div>
-            <div className="stat-row">
-              {incomeChange && (
-                <span className={`stat-chip ${incomeChange.up ? "chip-up" : "chip-down"}`}>
-                  {incomeChange.label}
-                </span>
-              )}
-              <span className="stat-sublbl">vs mês anterior</span>
-            </div>
-          </div>
-
-          <div className="stat-card fade-up" style={{ animationDelay: "80ms" }}>
-            <div className="stat-icon si-expense">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
-              </svg>
-            </div>
-            <div className="stat-lbl">Despesas</div>
-            <div className="stat-val">{fmt(totalExpenses)}</div>
-            <div className="stat-row">
-              {expenseChange && (
-                <span className={`stat-chip ${!expenseChange.up ? "chip-up" : "chip-down"}`}>
-                  {expenseChange.label}
-                </span>
-              )}
-              <span className="stat-sublbl">vs mês anterior</span>
-            </div>
-          </div>
-
-          <div className="stat-card fade-up" style={{ animationDelay: "160ms" }}>
-            <div className="stat-icon si-balance">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="1" y="4" width="22" height="16" rx="2"/>
-                <path d="M1 10h22"/>
-                <circle cx="18" cy="15" r="1" fill="currentColor" stroke="none"/>
-              </svg>
-            </div>
-            <div className="stat-lbl">Saldo</div>
-            <div className="stat-val">{fmt(balance)}</div>
-            <div className="stat-row">
-              <span className={`stat-chip ${balance >= 0 ? "chip-up" : "chip-down"}`}>
-                {balance >= 0 ? "positivo" : "negativo"}
-              </span>
-              <span className="stat-sublbl">este mês</span>
-            </div>
-          </div>
-
-          <div className="stat-card fade-up" style={{ animationDelay: "240ms" }}>
-            <div className="stat-icon si-savings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 21l1.09-4.37A7 7 0 1117.32 9H19a2 2 0 012 2v1a2 2 0 01-2 2h-.09A7 7 0 019.07 20.25L9 21H4z"/>
-              </svg>
-            </div>
-            <div className="stat-lbl">Poupança</div>
-            <div className="stat-val">{savingsRate}%</div>
-            <div className="stat-row">
-              <span className={`stat-chip ${savingsRate >= 0 ? "chip-up" : "chip-down"}`}>
-                {savingsRate >= 20 ? "ótimo" : savingsRate >= 10 ? "ok" : "baixo"}
-              </span>
-              <span className="stat-sublbl">da receita</span>
-            </div>
-          </div>
-        </div>
-
         {/* Charts */}
         <div className="charts-row">
           <div className="card">

@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { QuickAdd } from "@/components/quick-add"
 import { TransactionsTable } from "@/components/transactions-table"
 import { Topbar } from "@/components/topbar"
 
@@ -57,22 +56,9 @@ export default async function LancamentosPage({
 
   return (
     <>
-      <Topbar title="Lançamentos">
-        <QuickAdd categories={categories} triggerLabel="Novo Lançamento" triggerClass="btn btn-primary" />
-      </Topbar>
+      <Topbar title="Lançamentos" />
 
       <div className="content">
-        <div className="page-head">
-          <div>
-            <h2>Lançamentos</h2>
-            <p>
-              <span style={{ color: "var(--emerald)", fontWeight: 700 }}>+{fmt(totalIncome)}</span>
-              <span style={{ color: "var(--text3)" }}> · </span>
-              <span style={{ color: "var(--rose)", fontWeight: 700 }}>−{fmt(totalExpense)}</span>
-            </p>
-          </div>
-        </div>
-
         <div className="table-wrap">
           <div className="table-bar">
             {/* Type filter pills */}
@@ -90,7 +76,11 @@ export default async function LancamentosPage({
               </a>
             ))}
 
-            <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--text3)", fontWeight: 500, flexShrink: 0 }}>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text3)", fontWeight: 500, flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: "var(--emerald)", fontWeight: 700 }}>+{fmt(totalIncome)}</span>
+              <span>·</span>
+              <span style={{ color: "var(--rose)", fontWeight: 700 }}>−{fmt(totalExpense)}</span>
+              <span style={{ color: "var(--border2)" }}>|</span>
               {serialized.length} itens
             </span>
 

@@ -149,10 +149,6 @@ export default function WhatsAppPage() {
     <>
       <Topbar title={<>WhatsApp · wweb.js <span className="sb-badge">BETA</span></>} />
       <div className="content">
-        <div className="page-head">
-          <div><h2>WhatsApp · wweb.js</h2><p>Interface de interação via mensagens</p></div>
-        </div>
-
         <div className="split-50">
           {/* Coluna esquerda: status + modo */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

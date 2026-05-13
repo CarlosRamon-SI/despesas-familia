@@ -92,32 +92,26 @@ export default async function RelatoriosPage({
     <>
       <Topbar title="Relatórios" />
       <div className="content">
-        <div className="page-head">
-          <div>
-            <h2>Relatórios</h2>
-            <p>Análise anual — {year}</p>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 4 }}>
-            {data.availableYears.map(y => (
-              <a
-                key={y}
-                href={`/relatorios?year=${y}`}
-                style={{
-                  padding: "7px 16px",
-                  borderRadius: 20,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  background: y === year ? "var(--indigo)" : "var(--surface3)",
-                  color: y === year ? "#fff" : "var(--text2)",
-                  transition: ".15s",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                }}
-              >
-                {y}
-              </a>
-            ))}
-          </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+          {data.availableYears.map(y => (
+            <a
+              key={y}
+              href={`/relatorios?year=${y}`}
+              style={{
+                padding: "7px 16px",
+                borderRadius: 20,
+                fontSize: 12.5,
+                fontWeight: 700,
+                background: y === year ? "var(--indigo)" : "var(--surface3)",
+                color: y === year ? "#fff" : "var(--text2)",
+                transition: ".15s",
+                textDecoration: "none",
+                display: "inline-flex",
+              }}
+            >
+              {y}
+            </a>
+          ))}
         </div>
 
         {/* Stat cards */}

@@ -1,8 +1,7 @@
-import type { Transaction, Category, User, Recurrence } from '@prisma/client'
+import type { Transaction, Category, User } from '@prisma/client'
 import type { Decimal } from '@prisma/client/runtime/library'
 
 type TransactionWithCategory = Transaction & { category: Category }
-type RecurrenceWithCategory  = Recurrence & { category: Category }
 
 export function formatCurrency(value: Decimal | number): string {
   const num = typeof value === 'number' ? value : Number(value)
@@ -52,57 +51,46 @@ export function installmentConfirmation(
   return `📅 *${times} parcelas registradas!*\n\n📝 ${description}\n💰 ${times}x de ${formatCurrency(installmentAmount)} = ${formatCurrency(totalAmount)}\n\nCada parcela foi lançada no mês correspondente.`
 }
 
-export function recurringCreated(recurrence: RecurrenceWithCategory): string {
-  const isIncome = recurrence.type === 'INCOME'
+export function recurringCreated(
+  tx: { type: 'INCOME' | 'EXPENSE'; description: string; amount: Decimal | number; category: { emoji: string; name: string } },
+): string {
+  const isIncome = tx.type === 'INCOME'
   const icon  = isIncome ? '💰' : '📅'
   const label = isIncome ? 'Receita recorrente criada!' : 'Despesa recorrente criada!'
-  return `${icon} *${label}*\n\n${recurrence.category.emoji} *${recurrence.category.name}*\n📝 ${recurrence.description}\n${isIncome ? '📈' : '📉'} ${formatCurrency(recurrence.amount)}/mês\n\nIncluída automaticamente no resumo mensal.\nUse *recorrências* para ver todas.`
+  return `${icon} *${label}*\n\n${tx.category.emoji} *${tx.category.name}*\n📝 ${tx.description}\n${isIncome ? '📈' : '📉'} ${formatCurrency(tx.amount)}/mês\n\nLançamento gerado para este mês e o próximo.\nUse *recorrências* para ver todas.`
 }
 
-export function listRecurrences(recurrences: RecurrenceWithCategory[]): string {
-  if (recurrences.length === 0) {
-    return `📅 *Recorrências ativas*\n\nNenhuma recorrência cadastrada.\n\nDiga *recorrente* ao confirmar um lançamento para criar uma.`
+export function listRecurrences(transactions: TransactionWithCategory[]): string {
+  if (transactions.length === 0) {
+    return `📅 *Recorrências ativas*\n\nNenhuma transação recorrente este mês.\n\nDiga *recorrente* ao confirmar um lançamento para criar uma.`
   }
 
-  const lines = recurrences
-    .map((r, i) => {
-      const signal = r.type === 'INCOME' ? '+' : '-'
-      return `*R${i + 1}* ${r.category.emoji} ${r.description}: *${signal}${formatCurrency(r.amount)}/mês*`
+  const lines = transactions
+    .map((t, i) => {
+      const signal = t.type === 'INCOME' ? '+' : '-'
+      return `*R${i + 1}* ${t.category.emoji} ${t.description}: *${signal}${formatCurrency(t.amount)}/mês*`
     })
     .join('\n')
 
-  return `📅 *Recorrências ativas*\n\n${lines}\n\n• *cancelar R1* — desativa\n• *alterar R1 60* — muda o valor`
-}
-
-export function recurringCancelled(recurrence: RecurrenceWithCategory): string {
-  return `✅ *Recorrência cancelada.*\n\n${recurrence.category.emoji} ${recurrence.description} — ${formatCurrency(recurrence.amount)}/mês\n\nNão será mais incluída no resumo.`
-}
-
-export function recurringAltered(recurrence: RecurrenceWithCategory, oldAmount: number): string {
-  return `✅ *Valor atualizado.*\n\n${recurrence.category.emoji} ${recurrence.description}\n${formatCurrency(oldAmount)}/mês → *${formatCurrency(recurrence.amount)}/mês*`
+  return `📅 *Recorrências ativas (este mês)*\n\n${lines}`
 }
 
 export function monthlySummary(
   transactions: TransactionWithCategory[],
   month: string,
-  recurrences: RecurrenceWithCategory[] = [],
 ): string {
-  const txIncome  = transactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0)
-  const txExpense = transactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)
-  const recIncome  = recurrences.filter((r) => r.type === 'INCOME').reduce((s, r) => s + Number(r.amount), 0)
-  const recExpense = recurrences.filter((r) => r.type === 'EXPENSE').reduce((s, r) => s + Number(r.amount), 0)
-
-  const income  = txIncome + recIncome
-  const expense = txExpense + recExpense
+  const income  = transactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0)
+  const expense = transactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)
   const balance = income - expense
+  const recurring = transactions.filter((t) => t.recorrente).length
 
-  if (transactions.length === 0 && recurrences.length === 0) {
+  if (transactions.length === 0) {
     return `📊 *Resumo de ${month}*\n\nNenhuma transação registrada.`
   }
 
   let text = `📊 *Resumo de ${month}*\n\n💰 Receitas: *${formatCurrency(income)}*\n💸 Despesas: *${formatCurrency(expense)}*\n${balance >= 0 ? '✅' : '⚠️'} Saldo: *${formatCurrency(balance)}*\n📝 ${transactions.length} lançamento(s)`
-  if (recurrences.length > 0) {
-    text += `\n📅 ${recurrences.length} recorrência(s) ativa(s)`
+  if (recurring > 0) {
+    text += `\n📅 ${recurring} recorrente(s)`
   }
   return text
 }
@@ -110,11 +98,8 @@ export function monthlySummary(
 export function categoryBreakdown(
   expenses: TransactionWithCategory[],
   month: string,
-  recurrences: RecurrenceWithCategory[] = [],
 ): string {
-  const recExpenses = recurrences.filter((r) => r.type === 'EXPENSE')
-
-  if (expenses.length === 0 && recExpenses.length === 0) {
+  if (expenses.length === 0) {
     return `📊 *Despesas por categoria - ${month}*\n\nNenhuma despesa registrada.`
   }
 
@@ -127,12 +112,6 @@ export function categoryBreakdown(
     },
     {},
   )
-
-  for (const r of recExpenses) {
-    const key = r.category.name
-    if (!grouped[key]) grouped[key] = { emoji: r.category.emoji, total: 0 }
-    grouped[key].total += Number(r.amount)
-  }
 
   const total = Object.values(grouped).reduce((s, v) => s + v.total, 0)
 
@@ -183,11 +162,7 @@ export function helpMessage(): string {
 • resumo — saldo do mês
 • categorias — despesas por categoria
 • últimos — últimas transações
-• recorrências — despesas/receitas fixas
-
-*Recorrências:*
-• cancelar R1 — desativa a recorrência
-• alterar R1 60 — muda o valor
+• recorrências — lançamentos fixos deste mês
 
 *Correção:*
 • editar — altera o último lançamento

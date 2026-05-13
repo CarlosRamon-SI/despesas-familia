@@ -18,13 +18,6 @@ export default function OrcamentoPage() {
     <>
       <Topbar title="Orçamento" />
       <div className="content">
-        <div className="page-head">
-          <div>
-            <h2>Orçamento</h2>
-            <p>Metas mensais por categoria · Abril 2026</p>
-          </div>
-        </div>
-
         {/* Summary cards */}
         <div className="budget-summary">
           <div className="budget-summary-card">

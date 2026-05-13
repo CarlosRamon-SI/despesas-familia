@@ -12,8 +12,6 @@ import {
   installmentConfirmation,
   recurringCreated,
   listRecurrences,
-  recurringCancelled,
-  recurringAltered,
   monthlySummary,
   categoryBreakdown,
   lastTransactions,
@@ -23,6 +21,7 @@ import {
   helpMessage,
   unknownMessage,
 } from './responses'
+import { nextMonthDate } from '@/lib/recurrence-utils'
 
 type PendingTx = {
   type: 'expense' | 'income'
@@ -243,18 +242,32 @@ export async function handleIncomingMessage(message: Message) {
 
     if (isRecurring) {
       pendingTransaction.delete(user.id)
-      const recurrence = await prisma.recurrence.create({
+      const txDate = pending.date ?? new Date()
+      const txType = pending.type === 'income' ? 'INCOME' : 'EXPENSE'
+      const tx = await prisma.transaction.create({
         data: {
-          type: pending.type === 'income' ? 'INCOME' : 'EXPENSE',
+          type: txType,
           description: pending.description,
           amount: pending.amount,
-          dayOfMonth: (pending.date ?? new Date()).getDate(),
+          date: txDate,
+          recorrente: true,
           userId: user.id,
           categoryId: pending.categoryId,
         },
         include: { category: true },
       })
-      await message.reply(recurringCreated(recurrence))
+      await prisma.transaction.create({
+        data: {
+          type: txType,
+          description: pending.description,
+          amount: pending.amount,
+          date: nextMonthDate(txDate),
+          recorrente: true,
+          userId: user.id,
+          categoryId: pending.categoryId,
+        },
+      })
+      await message.reply(recurringCreated(tx))
       return
     }
 
@@ -338,49 +351,21 @@ export async function handleIncomingMessage(message: Message) {
     }
 
     case 'list_recurring': {
-      const recurrences = await prisma.recurrence.findMany({
-        where: { userId: user.id, active: true },
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+      const recorrentes = await prisma.transaction.findMany({
+        where: { userId: user.id, recorrente: true, date: { gte: monthStart, lte: monthEnd } },
         include: { category: true },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { date: 'asc' },
       })
-      await message.reply(listRecurrences(recurrences))
+      await message.reply(listRecurrences(recorrentes))
       break
     }
 
-    case 'cancel_recurring': {
-      const activeOnes = await prisma.recurrence.findMany({
-        where: { userId: user.id, active: true },
-        include: { category: true },
-        orderBy: { createdAt: 'asc' },
-      })
-      const target = activeOnes[command.ref - 1]
-      if (!target) {
-        await message.reply(`❌ Recorrência R${command.ref} não encontrada. Use *recorrências* para ver a lista.`)
-        break
-      }
-      await prisma.recurrence.update({ where: { id: target.id }, data: { active: false } })
-      await message.reply(recurringCancelled(target))
-      break
-    }
-
+    case 'cancel_recurring':
     case 'alter_recurring': {
-      const activeOnes = await prisma.recurrence.findMany({
-        where: { userId: user.id, active: true },
-        include: { category: true },
-        orderBy: { createdAt: 'asc' },
-      })
-      const target = activeOnes[command.ref - 1]
-      if (!target) {
-        await message.reply(`❌ Recorrência R${command.ref} não encontrada. Use *recorrências* para ver a lista.`)
-        break
-      }
-      const oldAmount = Number(target.amount)
-      const updated = await prisma.recurrence.update({
-        where: { id: target.id },
-        data: { amount: command.amount },
-        include: { category: true },
-      })
-      await message.reply(recurringAltered(updated, oldAmount))
+      await message.reply('📱 Para gerenciar recorrências (cancelar ou alterar valores), acesse o painel web.')
       break
     }
 
@@ -404,20 +389,14 @@ export async function handleIncomingMessage(message: Message) {
       const start = new Date(now.getFullYear(), now.getMonth(), 1)
       const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-      const [transactions, recurrences] = await Promise.all([
-        prisma.transaction.findMany({
-          where: { date: { gte: start, lte: end } },
-          include: { category: true },
-          orderBy: { date: 'desc' },
-        }),
-        prisma.recurrence.findMany({
-          where: { active: true },
-          include: { category: true },
-        }),
-      ])
+      const transactions = await prisma.transaction.findMany({
+        where: { date: { gte: start, lte: end } },
+        include: { category: true },
+        orderBy: { date: 'desc' },
+      })
 
       const month = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      await message.reply(monthlySummary(transactions, month, recurrences))
+      await message.reply(monthlySummary(transactions, month))
       break
     }
 
@@ -426,19 +405,13 @@ export async function handleIncomingMessage(message: Message) {
       const start = new Date(now.getFullYear(), now.getMonth(), 1)
       const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-      const [transactions, recurrences] = await Promise.all([
-        prisma.transaction.findMany({
-          where: { date: { gte: start, lte: end }, type: 'EXPENSE' },
-          include: { category: true },
-        }),
-        prisma.recurrence.findMany({
-          where: { active: true },
-          include: { category: true },
-        }),
-      ])
+      const transactions = await prisma.transaction.findMany({
+        where: { date: { gte: start, lte: end }, type: 'EXPENSE' },
+        include: { category: true },
+      })
 
       const month = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      await message.reply(categoryBreakdown(transactions, month, recurrences))
+      await message.reply(categoryBreakdown(transactions, month))
       break
     }
 

@@ -10,9 +10,6 @@ export default function ConfiguracoesPage() {
     <>
       <Topbar title="Configurações" />
       <div className="content">
-        <div className="page-head">
-          <div><h2>Configurações</h2><p>Membros e preferências do sistema</p></div>
-        </div>
         <div className="split-50">
           <div className="card">
             <div className="card-head"><div className="card-title">Membros da Família</div></div>
