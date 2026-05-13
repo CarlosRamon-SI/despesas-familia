@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FamilyFlow — Gestão Doméstica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --ff: 'Plus Jakarta Sans', sans-serif;
+  --ff-serif: 'Fraunces', Georgia, serif;
+
+  /* Light Theme */
+  --bg:        #F6F4EF;
+  --bg2:       #EDEAE3;
+  --surface:   #FFFFFF;
+  --surface2:  #F9F8F5;
+  --surface3:  #F2F0EA;
+  --border:    rgba(0,0,0,0.07);
+  --border2:   rgba(0,0,0,0.13);
+  --text:      #18170F;
+  --text2:     #5C5B54;
+  --text3:     #9C9B93;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 4px 16px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12),0 4px 12px rgba(0,0,0,0.06);
+
+  /* Accent palette */
+  --indigo:    #4F46E5; --indigo-l: #EEF2FF; --indigo-d: #3730A3;
+  --emerald:   #059669; --emerald-l:#D1FAE5; --emerald-d:#065F46;
+  --rose:      #E11D48; --rose-l:   #FFE4E6; --rose-d:   #881337;
+  --amber:     #D97706; --amber-l:  #FEF3C7; --amber-d:  #78350F;
+  --sky:       #0284C7; --sky-l:    #E0F2FE; --sky-d:    #0C4A6E;
+  --violet:    #7C3AED; --violet-l: #EDE9FE; --violet-d: #3B0764;
+  --teal:      #0D9488; --teal-l:   #CCFBF1; --teal-d:   #134E4A;
+  --r: 14px; --r-sm: 9px; --r-lg: 20px; --r-xl: 28px;
+}
+[data-theme="dark"] {
+  --bg:       #0D0D0B;
+  --bg2:      #131310;
+  --surface:  #1A1916;
+  --surface2: #211F1B;
+  --surface3: #2A2823;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #F0EFE8;
+  --text2:    #9C9B93;
+  --text3:    #5C5B54;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
+  --shadow:   0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,0.6);
+  --indigo:   #818CF8; --indigo-l: #1E1B4B; --indigo-d: #C7D2FE;
+  --emerald:  #34D399; --emerald-l:#022C22; --emerald-d:#A7F3D0;
+  --rose:     #FB7185; --rose-l:   #4C0519; --rose-d:   #FECDD3;
+  --amber:    #FCD34D; --amber-l:  #292003; --amber-d:  #FDE68A;
+  --sky:      #38BDF8; --sky-l:    #082032; --sky-d:    #BAE6FD;
+  --violet:   #A78BFA; --violet-l: #1E0B42; --violet-d: #DDD6FE;
+  --teal:     #2DD4BF; --teal-l:   #042F2E; --teal-d:   #99F6E4;
+}
+
+/* ─── RESET & BASE ─────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;transition:background .3s,color .3s;min-height:100vh;overflow-x:hidden}
+button{font-family:var(--ff);cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:var(--ff)}
+a{text-decoration:none;color:inherit}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ─── LAYOUT ───────────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+.sidebar{
+  width:252px;min-width:252px;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;z-index:200;
+  transition:transform .3s ease,background .3s;
+}
+.main{margin-left:252px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{
+  height:58px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:14px;
+  position:sticky;top:0;z-index:100;transition:background .3s;
+}
+.content{padding:26px;flex:1}
+
+/* ─── SIDEBAR PARTS ─────────────────────────────────────── */
+.sb-logo{
+  padding:18px 18px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:11px;
+}
+.sb-logo-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--indigo),var(--violet));
+  display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;
+}
+.sb-logo-icon svg{width:18px;height:18px}
+.sb-logo-name{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.sb-logo-tag{font-size:10.5px;color:var(--text3);font-weight:400;margin-top:1px}
+
+.sb-nav{flex:1;overflow-y:auto;padding:10px 0}
+.sb-section{
+  padding:0 14px 4px;font-size:10px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.09em;margin-top:14px;
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  margin:1px 8px;border-radius:var(--r-sm);color:var(--text2);
+  font-size:13.5px;font-weight:400;transition:.15s ease;cursor:pointer;
+  border:none;background:none;width:calc(100% - 16px);text-align:left;
+  position:relative;
+}
+.sb-item:hover{background:var(--surface3);color:var(--text)}
+.sb-item.active{background:var(--indigo-l);color:var(--indigo);font-weight:500}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
+.sb-item.active svg{opacity:1}
+.sb-badge{
+  margin-left:auto;background:var(--rose-l);color:var(--rose);
+  font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+
+.sb-bottom{padding:12px 12px 16px;border-top:1px solid var(--border)}
+.theme-btn{
+  width:100%;padding:10px 14px;border-radius:var(--r-sm);
+  background:var(--surface3);border:1px solid var(--border2);
+  display:flex;align-items:center;gap:9px;color:var(--text2);
+  font-size:13px;font-weight:500;font-family:var(--ff);
+  transition:.15s ease;cursor:pointer;
+}
+.theme-btn:hover{border-color:var(--amber);color:var(--amber)}
+.theme-btn svg{width:16px;height:16px;flex-shrink:0;transition:.3s}
+.theme-track{
+  margin-left:auto;width:34px;height:19px;border-radius:10px;
+  background:var(--amber);position:relative;transition:.25s;flex-shrink:0;
+}
+[data-theme="dark"] .theme-track{background:var(--surface2);border:1px solid var(--border2)}
+.theme-thumb{
+  position:absolute;top:2.5px;left:16px;width:14px;height:14px;
+  border-radius:50%;background:#fff;transition:.25s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.25);
+}
+[data-theme="dark"] .theme-thumb{left:2px;background:var(--text3)}
+
+/* ─── TOPBAR ─────────────────────────────────────────────── */
+.topbar-title{font-size:15px;font-weight:600;flex:1;color:var(--text)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:var(--r-sm);font-size:13px;font-weight:500;
+  cursor:pointer;transition:.15s ease;border:none;font-family:var(--ff);
+  white-space:nowrap;
+}
+.btn svg{width:14px;height:14px}
+.btn-primary{background:var(--indigo);color:#fff}
+.btn-primary:hover{background:var(--indigo-d);filter:brightness(1.05)}
+.btn-ghost{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);background:var(--bg2)}
+.btn-success{background:var(--emerald-l);color:var(--emerald-d)}
+.btn-success:hover{filter:brightness(.95)}
+.btn-danger{background:var(--rose-l);color:var(--rose-d)}
+.btn-danger:hover{filter:brightness(.95)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-sm svg{width:12px;height:12px}
+
+/* ─── AVATAR ─────────────────────────────────────────────── */
+.avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,#4F46E5,#7C3AED);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;flex-shrink:0;
+  box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--indigo-l);
+}
+
+/* ─── PAGE SYSTEM ────────────────────────────────────────── */
+.page{display:none;animation:fadeIn .18s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.page-head h2{font-family:var(--ff-serif);font-size:22px;font-weight:300;color:var(--text);letter-spacing:-.4px}
+.page-head p{font-size:12.5px;color:var(--text3);margin-top:3px}
+.page-head-actions{display:flex;gap:8px;padding-top:2px}
+
+/* ─── STAT CARDS ─────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;cursor:default;transition:.2s ease;position:relative;overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;right:0;width:80px;height:80px;
+  border-radius:50%;opacity:.06;transform:translate(20px,-20px);
+}
+.stat-card.s-income::before{background:var(--emerald)}
+.stat-card.s-expense::before{background:var(--rose)}
+.stat-card.s-balance::before{background:var(--sky)}
+.stat-card.s-savings::before{background:var(--violet)}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.stat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.stat-icon{
+  width:38px;height:38px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+}
+.stat-icon svg{width:17px;height:17px}
+.si-income{background:var(--emerald-l);color:var(--emerald)}
+.si-expense{background:var(--rose-l);color:var(--rose)}
+.si-balance{background:var(--sky-l);color:var(--sky)}
+.si-savings{background:var(--violet-l);color:var(--violet)}
+.stat-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:3px}
+.stat-chip svg{width:10px;height:10px}
+.chip-up{background:var(--emerald-l);color:var(--emerald-d)}
+.chip-down{background:var(--rose-l);color:var(--rose-d)}
+.stat-val{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.5px;margin-bottom:2px;font-family:var(--ff-serif)}
+.stat-lbl{font-size:12px;color:var(--text3)}
+
+/* ─── CARDS ──────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+
+/* ─── CHARTS GRID ─────────────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:22px}
+.chart-wrap{position:relative;height:210px}
+
+/* ─── TABLE ──────────────────────────────────────────────── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.table-bar{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{
+  text-align:left;font-size:10.5px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.07em;padding:10px 18px;
+  background:var(--surface2);border-bottom:1px solid var(--border);
+}
+.tbl td{padding:11px 18px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{transition:.12s}
+.tbl tbody tr:hover td{background:var(--surface2)}
+.tbl-desc{font-weight:500}
+.tbl-date{font-size:11.5px;color:var(--text3)}
+.amount{font-weight:600;font-variant-numeric:tabular-nums}
+.amount.pos{color:var(--emerald)}
+.amount.neg{color:var(--rose)}
+
+/* ─── CATEGORY TAGS ─────────────────────────────────────── */
+.tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:5px;font-size:11.5px;font-weight:500;
+}
+.tag svg{width:11px;height:11px}
+.tag-food{background:var(--amber-l);color:var(--amber-d)}
+.tag-transport{background:var(--sky-l);color:var(--sky-d)}
+.tag-health{background:var(--rose-l);color:var(--rose-d)}
+.tag-education{background:var(--violet-l);color:var(--violet-d)}
+.tag-entertainment{background:var(--teal-l);color:var(--teal-d)}
+.tag-bills{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+.tag-salary{background:var(--emerald-l);color:var(--emerald-d)}
+.tag-other{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+
+/* ─── STATUS ─────────────────────────────────────────────── */
+.status{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-paid{background:var(--emerald)}
+.dot-pending{background:var(--amber)}
+.dot-overdue{background:var(--rose)}
+
+/* ─── TABS ───────────────────────────────────────────────── */
+.tabs{display:flex;gap:2px;background:var(--surface3);border-radius:var(--r-sm);padding:3px}
+.tab{
+  padding:6px 14px;border-radius:6px;font-size:12.5px;font-weight:500;
+  cursor:pointer;color:var(--text2);background:none;border:none;
+  font-family:var(--ff);transition:.15s;
+}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+
+/* ─── QUICK ADD ──────────────────────────────────────────── */
+.quick-type{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.qtype-btn{
+  padding:10px 8px;border-radius:var(--r-sm);
+  border:1.5px solid var(--border2);background:var(--surface3);
+  cursor:pointer;font-size:13px;font-weight:500;font-family:var(--ff);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  color:var(--text2);transition:.15s;
+}
+.qtype-btn svg{width:14px;height:14px}
+.qtype-btn.exp.active{border-color:var(--rose);background:var(--rose-l);color:var(--rose-d)}
+.qtype-btn.inc.active{border-color:var(--emerald);background:var(--emerald-l);color:var(--emerald-d)}
+
+/* ─── FORM ───────────────────────────────────────────────── */
+.form-group{margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-label{display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.form-input{
+  width:100%;padding:9px 12px;background:var(--surface3);
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-size:13.5px;color:var(--text);font-family:var(--ff);
+  outline:none;transition:.15s;
+}
+.form-input:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input option{background:var(--surface);color:var(--text)}
+textarea.form-input{resize:vertical;min-height:70px}
+
+/* ─── MODAL ──────────────────────────────────────────────── */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:500;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);padding:20px;
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  background:var(--surface);border-radius:var(--r-lg);
+  width:500px;max-width:100%;max-height:92vh;overflow-y:auto;
+  box-shadow:var(--shadow-lg);border:1px solid var(--border2);
+  animation:modalIn .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-hd{
+  padding:22px 24px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-size:16px;font-weight:600;color:var(--text)}
+.modal-close{
+  width:30px;height:30px;border-radius:7px;
+  background:var(--surface3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;
+  transition:.15s;
+}
+.modal-close:hover{background:var(--bg2);color:var(--text)}
+.modal-close svg{width:14px;height:14px}
+.modal-body{padding:22px 24px}
+.modal-ft{padding:14px 24px 22px;display:flex;gap:8px;justify-content:flex-end}
+
+/* ─── BUDGET BARS ────────────────────────────────────────── */
+.budget-list{display:flex;flex-direction:column;gap:14px}
+.budget-item{}
+.budget-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.budget-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+.budget-name svg{width:13px;height:13px;color:var(--text3)}
+.budget-val{font-size:12px;color:var(--text3)}
+.prog-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .7s ease}
+.prog-g{background:linear-gradient(90deg,var(--emerald),#34d399)}
+.prog-a{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.prog-r{background:linear-gradient(90deg,var(--rose),#fb7185)}
+.prog-pct{font-size:11px;color:var(--text3);text-align:right;margin-top:4px}
+
+/* ─── WHATSAPP ───────────────────────────────────────────── */
+.wa-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.wa-top{
+  padding:15px 18px;
+  background:linear-gradient(135deg,#075E54,#128C7E);
+  display:flex;align-items:center;gap:12px;
+}
+.wa-top-icon{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center}
+.wa-top-icon svg{width:20px;height:20px;color:#fff}
+.wa-top-name{font-size:14px;font-weight:600;color:#fff}
+.wa-top-sub{font-size:11.5px;color:rgba(255,255,255,.7);margin-top:1px}
+.wa-live{margin-left:auto;width:9px;height:9px;border-radius:50%;background:#25D366;box-shadow:0 0 0 2px rgba(37,211,102,.3);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(37,211,102,.3)}50%{box-shadow:0 0 0 5px rgba(37,211,102,.1)}}
+.wa-body{padding:16px 18px}
+.wa-msgs{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:12px;height:230px;
+  overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;
+}
+.wa-msg{max-width:78%;padding:8px 12px;border-radius:12px;font-size:12.5px;line-height:1.45}
+.wa-msg.in{background:var(--surface);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:3px}
+.wa-msg.out{background:#DCF8C6;color:#064E3B;align-self:flex-end;border-bottom-right-radius:3px}
+[data-theme="dark"] .wa-msg.out{background:#15432F;color:#A7F3D0}
+.wa-msg b{font-weight:600}
+.wa-ts{font-size:10px;color:var(--text3);margin-top:3px;text-align:right}
+.wa-input-row{display:flex;gap:8px;align-items:center}
+.wa-in{
+  flex:1;padding:9px 14px;background:var(--surface3);
+  border:1.5px solid var(--border);border-radius:22px;
+  font-size:13px;color:var(--text);font-family:var(--ff);outline:none;transition:.15s;
+}
+.wa-in:focus{border-color:#25D366}
+.wa-send{
+  width:38px;height:38px;border-radius:50%;background:#25D366;
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:.15s;
+}
+.wa-send:hover{background:#22C55E;transform:scale(1.05)}
+.wa-send svg{width:14px;height:14px;color:#fff}
+.wa-cmds{margin-top:14px}
+.wa-cmd-lbl{font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.wa-cmd-list{display:flex;flex-wrap:wrap;gap:6px}
+.wa-cmd{
+  padding:4px 10px;border-radius:6px;background:var(--surface3);
+  border:1px solid var(--border);font-size:12px;color:var(--text2);
+  cursor:pointer;font-family:var(--ff);transition:.12s;
+}
+.wa-cmd:hover{border-color:#25D366;color:#15803D}
+
+/* ─── CODE BLOCK ──────────────────────────────────────────── */
+.code{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:14px 16px;
+  font-family:'Courier New',monospace;font-size:11.5px;color:var(--text2);
+  overflow-x:auto;white-space:pre;line-height:1.7;margin-top:12px;
+}
+.code .c{color:var(--indigo)}
+
+/* ─── STATUS CARDS ─────────────────────────────────────────── */
+.status-grid{display:flex;flex-direction:column;gap:10px}
+.status-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.status-row:last-child{border-bottom:none}
+.status-label{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.status-label svg{width:15px;height:15px}
+.status-val{font-size:12.5px;font-weight:500}
+.sv-ok{color:var(--emerald)}
+.sv-warn{color:var(--amber)}
+.sv-off{color:var(--text3)}
+
+/* ─── MEMBER CARD ─────────────────────────────────────────── */
+.member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.member-row:last-child{border-bottom:none}
+.member-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.member-name{font-size:13.5px;font-weight:500}
+.member-role{font-size:12px;color:var(--text3)}
+
+/* ─── NOTIFICATION TOAST ──────────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 16px;box-shadow:var(--shadow-lg);font-size:13px;
+  display:flex;align-items:center;gap:10px;min-width:260px;
+  animation:toastIn .25s ease;
+}
+.toast.hide{animation:toastOut .25s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(12px)}}
+.toast svg{width:16px;height:16px;flex-shrink:0}
+.toast.t-ok svg{color:var(--emerald)}
+.toast.t-err svg{color:var(--rose)}
+
+/* ─── SECTION SPLIT ───────────────────────────────────────── */
+.split-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
+.split-50{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.split-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+
+/* ─── EMPTY STATE ─────────────────────────────────────────── */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty svg{width:36px;height:36px;margin-bottom:10px;opacity:.5}
+
+/* ─── SEARCH ─────────────────────────────────────────────── */
+.search-wrap{position:relative;flex:1;max-width:260px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text3);pointer-events:none}
+.search-input{width:100%;padding:7px 10px 7px 30px;background:var(--surface3);border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;color:var(--text);font-family:var(--ff);outline:none;transition:.15s}
+.search-input:focus{border-color:var(--indigo)}
+
+/* ─── FILTER ROW ──────────────────────────────────────────── */
+.filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* ─── RECURRENCE PAGE ─────────────────────────────────────── */
+.recur-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.recur-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;transition:.2s ease;position:relative;overflow:hidden;
+}
+.recur-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.recur-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.recur-card-icon{
+  width:40px;height:40px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.recur-card-icon svg{width:18px;height:18px}
+.rci-exp{background:var(--rose-l);color:var(--rose)}
+.rci-inc{background:var(--emerald-l);color:var(--emerald)}
+.recur-menu-btn{
+  width:26px;height:26px;border-radius:6px;background:var(--surface3);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text3);transition:.12s;flex-shrink:0;
+}
+.recur-menu-btn:hover{color:var(--text);border-color:var(--border2)}
+.recur-menu-btn svg{width:13px;height:13px}
+.recur-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.recur-cat{margin-bottom:10px}
+.recur-val{font-size:20px;font-weight:700;font-family:var(--ff-serif);margin-bottom:8px}
+.recur-val.pos{color:var(--emerald)}
+.recur-val.neg{color:var(--rose)}
+.recur-meta{display:flex;flex-direction:column;gap:5px}
+.recur-meta-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.recur-meta-row svg{width:12px;height:12px;color:var(--text3);flex-shrink:0}
+.recur-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--border);
+}
+.recur-badge{
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.rb-active{background:var(--emerald-l);color:var(--emerald-d)}
+.rb-paused{background:var(--amber-l);color:var(--amber-d)}
+.rb-ended{background:var(--surface3);color:var(--text3)}
+.recur-next{font-size:11.5px;color:var(--text3)}
+.recur-next.urgent{color:var(--rose);font-weight:600}
+.recur-next.soon{color:var(--amber);font-weight:500}
+
+/* upcoming list */
+.upcoming-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 18px;border-bottom:1px solid var(--border);transition:.12s;
+}
+.upcoming-item:last-child{border-bottom:none}
+.upcoming-item:hover{background:var(--surface2)}
+.upcoming-day{
+  width:42px;height:42px;border-radius:var(--r-sm);flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--ff-serif);
+}
+.upd-exp{background:var(--rose-l);color:var(--rose-d)}
+.upd-inc{background:var(--emerald-l);color:var(--emerald-d)}
+.upcoming-day-num{font-size:17px;font-weight:700;line-height:1}
+.upcoming-day-mon{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+.upcoming-info{flex:1;min-width:0}
+.upcoming-name{font-size:13.5px;font-weight:500;color:var(--text)}
+.upcoming-sub{font-size:11.5px;color:var(--text3);margin-top:2px;display:flex;align-items:center;gap:6px}
+.upcoming-amount{font-size:14px;font-weight:700;font-family:var(--ff-serif);flex-shrink:0}
+.upcoming-amount.pos{color:var(--emerald)}
+.upcoming-amount.neg{color:var(--rose)}
+.recur-toggle-btn{
+  padding:4px 10px;border-radius:5px;font-size:11.5px;font-weight:500;
+  cursor:pointer;border:1px solid var(--border);font-family:var(--ff);
+  background:var(--surface3);color:var(--text2);transition:.12s;
+}
+.recur-toggle-btn:hover{border-color:var(--border2)}
+
+/* summary strip */
+.recur-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.recur-sum-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;
+}
+.rsc-label{font-size:11.5px;color:var(--text3);margin-bottom:4px}
+.rsc-val{font-size:19px;font-weight:700;font-family:var(--ff-serif);color:var(--text)}
+.rsc-val.pos{color:var(--emerald)}
+.rsc-val.neg{color:var(--rose)}
+.rsc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:900px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row,.split-2,.split-50,.split-3{grid-template-columns:1fr}
+  .recur-grid{grid-template-columns:repeat(2,1fr)}
+  .recur-summary{grid-template-columns:repeat(2,1fr)}
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">
+      <!-- wallet icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/><circle cx="18" cy="15" r="1" fill="currentColor"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-name">FamilyFlow</div>
+      <div class="sb-logo-tag">Gestão Doméstica</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <button class="sb-item active" onclick="nav('dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Painel
+    </button>
+    <button class="sb-item" onclick="nav('transactions',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+      Lançamentos
+    </button>
+    <button class="sb-item" onclick="nav('budget',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Orçamento
+    </button>
+
+    <div class="sb-section">Financeiro</div>
+    <button class="sb-item" onclick="nav('income',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Receitas
+    </button>
+    <button class="sb-item" onclick="nav('expenses',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+      Despesas
+    </button>
+    <button class="sb-item" onclick="nav('reports',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Relatórios
+    </button>
+
+    <button class="sb-item" onclick="nav('recurring',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      Recorrências
+      <span class="sb-badge" id="recurBadge" style="display:none">0</span>
+    </button>
+
+    <div class="sb-section">Integrações</div>
+    <button class="sb-item" onclick="nav('whatsapp',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      WhatsApp · wweb.js
+      <span class="sb-badge">BETA</span>
+    </button>
+    <button class="sb-item" onclick="nav('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Configurações
+    </button>
+  </nav>
+
+  <div class="sb-bottom">
+    <button class="theme-btn" onclick="toggleTheme()">
+      <!-- bulb icon -->
+      <svg id="bulbSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6"/><path d="M12 3a6 6 0 016 6c0 2.22-1.2 4.16-3 5.2V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2.8C7.2 13.16 6 11.22 6 9a6 6 0 016-6z"/></svg>
+      <span id="themeLbl" style="font-size:13px">Tema Claro</span>
+      <div class="theme-track"><div class="theme-thumb"></div></div>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══════════════════════════════════════════════ -->
+<main class="main">
+  <header class="topbar">
+    <span class="topbar-title" id="topTitle">Painel</span>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Lançamento
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('income')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Receita
+      </button>
+      <div class="avatar">FS</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ──────────── PAINEL ──────────── -->
+    <div id="pg-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card s-income">
+          <div class="stat-row">
+            <div class="stat-icon si-income">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>
+            </div>
+            <span class="stat-chip chip-up">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+              +8,2%
+            </span>
+          </div>
+          <div class="stat-val" id="statIncome">R$ 8.400</div>
+          <div class="stat-lbl">Receitas do mês</div>
+        </div>
+        <div class="stat-card s-expense">
+          <div class="stat-row">
+            <div class="stat-icon si-expense">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V2M17 17l-5 5-5-5"/></svg>
+            </div>
+            <span class="stat-chip chip-down">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+              +4,1%
+            </span>
+          </div>
+          <div class="stat-val" id="statExpense">R$ 5.230</div>
+          <div class="stat-lbl">Despesas do mês</div>
+        </div>
+        <div class="stat-card s-balance">
+          <div class="stat-row">
+            <div class="stat-icon si-balance">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+            </div>
+            <span class="stat-chip chip-up">+3,1%</span>
+          </div>
+          <div class="stat-val" id="statBalance">R$ 3.170</div>
+          <div class="stat-lbl">Saldo disponível</div>
+        </div>
+        <div class="stat-card s-savings">
+          <div class="stat-row">
+            <div class="stat-icon si-savings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+            </div>
+            <span class="stat-chip chip-up">38%</span>
+          </div>
+          <div class="stat-val">R$ 1.200</div>
+          <div class="stat-lbl">Poupança acumulada</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Fluxo de Caixa</div><div class="card-sub">Receitas vs Despesas — 6 meses</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartCashflow"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Gastos por Categoria</div><div class="card-sub">Abril 2026</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartDoughnut"></canvas></div>
+        </div>
+      </div>
+
+      <div class="split-2">
+        <div class="table-wrap">
+          <div class="table-bar">
+            <span style="font-size:14px;font-weight:600">Lançamentos Recentes</span>
+            <button class="btn btn-ghost btn-sm" onclick="nav('transactions',null)">Ver todos</button>
+          </div>
+          <table class="tbl" id="tblRecent"></table>
+        </div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:7px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Lançamento Rápido
+          </div>
+          <div class="quick-type">
+            <button class="qtype-btn exp active" id="qExp" onclick="setQType('expense')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Despesa
+            </button>
+            <button class="qtype-btn inc" id="qInc" onclick="setQType('income')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Receita
+            </button>
+          </div>
+          <div class="form-group"><label class="form-label">Descrição</label><input class="form-input" id="qDesc" placeholder="Ex: Mercado, Combustível…"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="qVal" type="number" min="0" placeholder="0,00"></div>
+            <div class="form-group"><label class="form-label">Categoria</label>
+              <select class="form-input" id="qCat">
+                <option value="food">Alimentação</option>
+                <option value="transport">Transporte</option>
+                <option value="health">Saúde</option>
+                <option value="education">Educação</option>
+                <option value="entertainment">Lazer</option>
+                <option value="bills">Contas</option>
+                <option value="salary">Salário</option>
+                <option value="other">Outros</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="quickAdd()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── LANÇAMENTOS ──────────── -->
+    <div id="pg-transactions" class="page">
+      <div class="page-head">
+        <div><h2>Lançamentos</h2><p>Todas as movimentações financeiras</p></div>
+        <div class="page-head-actions">
+          <button class="btn btn-primary" onclick="openModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-bar">
+          <div class="filter-row">
+            <div class="tabs">
+              <button class="tab active" onclick="filterTx('all',this)">Todos</button>
+              <button class="tab" onclick="filterTx('income',this)">Receitas</button>
+              <button class="tab" onclick="filterTx('expense',this)">Despesas</button>
+            </div>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="search-input" id="txSearch" placeholder="Buscar lançamento…" oninput="renderTx()">
+            </div>
+          </div>
+        </div>
+        <table class="tbl" id="tblAll"></table>
+      </div>
+    </div>
+
+    <!-- ──────────── ORÇAMENTO ──────────── -->
+    <div id="pg-budget" class="page">
+      <div class="page-head">
+        <div><h2>Orçamento</h2><p>Metas mensais por categoria — Abril 2026</p></div>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          Ajustar Metas
+        </button>
+      </div>
+      <div class="split-50">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Execução por Categoria</div></div>
+          <div class="budget-list" id="budgetBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Evolução do Orçamento</div></div>
+          <div class="chart-wrap"><canvas id="chartBudget"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── RECEITAS ──────────── -->
+    <div id="pg-income" class="page">
+      <div class="page-head">
+        <div><h2>Receitas</h2><p>Todas as entradas da família</p></div>
+        <button class="btn btn-success" onclick="openModal('income')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Receita
+        </button>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="tblIncome"></table></div>
+    </div>
+
+    <!-- ──────────── DESPESAS ──────────── -->
+    <div id="pg-expenses" class="page">
+      <div class="page-head">
+        <div><h2>Despesas</h2><p>Todos os gastos e contas</p></div>
+        <button class="btn btn-danger" onclick="openModal('expense')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Despesa
+        </button>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="tblExpenses"></table></div>
+    </div>
+
+    <!-- ──────────── RELATÓRIOS ──────────── -->
+    <div id="pg-reports" class="page">
+      <div class="page-head">
+        <div><h2>Relatórios</h2><p>Análise histórica das finanças</p></div>
+      </div>
+      <div class="split-3">
+        <div class="card"><div class="card-head"><div class="card-title">Receitas vs Despesas</div></div><div class="chart-wrap"><canvas id="rptChart1"></canvas></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Poupança Mensal</div></div><div class="chart-wrap"><canvas id="rptChart2"></canvas></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Distribuição de Gastos</div></div><div class="chart-wrap"><canvas id="rptChart3"></canvas></div></div>
+      </div>
+      <div class="split-50">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Maiores Despesas — Abril</div></div>
+          <table class="tbl" id="tblTopExp"></table>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Resumo Anual</div></div>
+          <div class="chart-wrap"><canvas id="rptChart4"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── RECORRÊNCIAS ──────────── -->
+    <div id="pg-recurring" class="page">
+      <div class="page-head">
+        <div><h2>Recorrências</h2><p>Receitas e despesas automáticas e periódicas</p></div>
+        <button class="btn btn-primary" onclick="openRecurModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Recorrência
+        </button>
+      </div>
+
+      <!-- summary strip -->
+      <div class="recur-summary" id="recurSummary"></div>
+
+      <!-- tabs -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap">
+        <div class="tabs" id="recurTabs">
+          <button class="tab active" onclick="setRecurFilter('all',this)">Todas</button>
+          <button class="tab" onclick="setRecurFilter('expense',this)">Despesas</button>
+          <button class="tab" onclick="setRecurFilter('income',this)">Receitas</button>
+          <button class="tab" onclick="setRecurFilter('active',this)">Ativas</button>
+          <button class="tab" onclick="setRecurFilter('paused',this)">Pausadas</button>
+        </div>
+        <div class="search-wrap" style="max-width:220px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="recurSearch" placeholder="Buscar…" oninput="renderRecurCards()">
+        </div>
+      </div>
+
+      <!-- cards -->
+      <div class="recur-grid" id="recurGrid"></div>
+
+      <!-- upcoming -->
+      <div class="split-50">
+        <div class="table-wrap">
+          <div class="table-bar"><span style="font-size:14px;font-weight:600">Próximos Vencimentos — 30 dias</span></div>
+          <div id="upcomingList"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Compromisso Mensal Fixo</div><div class="card-sub">Projeção de receitas e despesas recorrentes</div></div>
+          <div class="chart-wrap"><canvas id="chartRecurProj"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── WHATSAPP ──────────── -->
+    <div id="pg-whatsapp" class="page">
+      <div class="page-head">
+        <div><h2>Canal WhatsApp</h2><p>Integração via wweb.js para lançamentos por mensagem</p></div>
+      </div>
+      <div class="split-50">
+        <div class="wa-wrap">
+          <div class="wa-top">
+            <div class="wa-top-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </div>
+            <div>
+              <div class="wa-top-name">FamilyFlow Bot</div>
+              <div class="wa-top-sub">+55 11 9 9999-0000 · wweb.js</div>
+            </div>
+            <div class="wa-live" id="waLive"></div>
+          </div>
+          <div class="wa-body">
+            <div class="wa-msgs" id="waMsgs">
+              <div class="wa-msg in">
+                Olá! Sou o <b>FamilyFlow Bot</b> 🤖<br>
+                Envie <b>/ajuda</b> para ver os comandos.
+                <div class="wa-ts">09:00</div>
+              </div>
+            </div>
+            <div class="wa-input-row">
+              <input class="wa-in" id="waIn" placeholder="Digite um comando ou mensagem…" onkeydown="if(event.key==='Enter')sendWa()">
+              <button class="wa-send" onclick="sendWa()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="wa-cmds">
+              <div class="wa-cmd-lbl">Atalhos</div>
+              <div class="wa-cmd-list">
+                <button class="wa-cmd" onclick="setWaIn('/ajuda')">/ajuda</button>
+                <button class="wa-cmd" onclick="setWaIn('/saldo')">/saldo</button>
+                <button class="wa-cmd" onclick="setWaIn('/resumo')">/resumo</button>
+                <button class="wa-cmd" onclick="setWaIn('/ultimos')">/ultimos</button>
+                <button class="wa-cmd" onclick="setWaIn('despesa 50 mercado')">despesa</button>
+                <button class="wa-cmd" onclick="setWaIn('receita 3000 salario')">receita</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="card-head"><div class="card-title">Status da Conexão</div></div>
+            <div class="status-grid">
+              <div class="status-row">
+                <span class="status-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--emerald)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Node.js / wweb.js
+                </span>
+                <span class="status-val sv-ok">Instalado</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber)"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 10h2v4H7zM15 10h2v4h-2zM7 7h2v1H7zM15 7h2v1h-2z"/></svg>
+                  QR Code
+                </span>
+                <span class="status-val sv-warn">Aguardando scan</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                  Webhook ativo
+                </span>
+                <span class="status-val sv-off">Desconectado</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:14px" onclick="alert('Integração real requer servidor Node.js.\nVeja o código abaixo para instruções.')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 10h2v4H7zM15 10h2v4h-2z"/></svg>
+              Escanear QR Code
+            </button>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">Integração wweb.js</div></div>
+            <div class="code"><span class="c">// 1. Instalar dependências</span>
+npm install whatsapp-web.js qrcode-terminal
+
+<span class="c">// 2. familyflow-bot.js</span>
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+
+const client = new Client({
+  authStrategy: new LocalAuth()
+});
+
+client.on('qr', qr => qrcode.generate(qr, {small:true}));
+client.on('ready', () => console.log('Bot conectado!'));
+
+client.on('message', async msg => {
+  const [cmd, val, ...rest] = msg.body.trim().split(' ');
+  const desc = rest.join(' ');
+
+  if (cmd === 'despesa') {
+    await api.post('/transactions', {
+      type:'expense', value:parseFloat(val), desc
+    });
+    msg.reply(`✅ Despesa R$${val} — ${desc}`);
+  }
+
+  if (cmd === 'receita') {
+    await api.post('/transactions', {
+      type:'income', value:parseFloat(val), desc
+    });
+    msg.reply(`✅ Receita R$${val} — ${desc}`);
+  }
+
+  if (cmd === '/saldo') {
+    const { balance } = await api.get('/balance');
+    msg.reply(`💰 Saldo: R$ ${balance}`);
+  }
+
+  if (cmd === '/resumo') {
+    const r = await api.get('/summary');
+    msg.reply(`📊 Receitas: R$${r.income}\n❌ Despesas: R$${r.expense}`);
+  }
+});
+
+client.initialize();</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── CONFIGURAÇÕES ──────────── -->
+    <div id="pg-settings" class="page">
+      <div class="page-head"><div><h2>Configurações</h2><p>Preferências e perfil familiar</p></div></div>
+      <div class="split-50">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Perfil da Família</div></div>
+          <div class="form-group"><label class="form-label">Nome da família</label><input class="form-input" value="Família Silva"></div>
+          <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" type="email" value="familia@silva.com.br"></div>
+          <div class="form-group"><label class="form-label">Moeda</label>
+            <select class="form-input"><option>BRL — Real Brasileiro</option><option>USD — Dólar Americano</option><option>EUR — Euro</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Dia de fechamento</label><input class="form-input" type="number" value="5" min="1" max="28"></div>
+            <div class="form-group"><label class="form-label">Meta de poupança %</label><input class="form-input" type="number" value="20" min="0" max="100"></div>
+          </div>
+          <button class="btn btn-primary" onclick="toast('Configurações salvas!','ok')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salvar
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Membros da Família</div></div>
+          <div id="membersWrap"></div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Convidar Membro
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /shell -->
+
+<!-- ═══ MODAL ═══════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modalBg" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title" id="modalTitle">Novo Lançamento</span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="quick-type" style="margin-bottom:18px">
+        <button class="qtype-btn exp active" id="mExp" onclick="setMType('expense')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Despesa
+        </button>
+        <button class="qtype-btn inc" id="mInc" onclick="setMType('income')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Receita
+        </button>
+      </div>
+      <div class="form-group"><label class="form-label">Descrição</label><input class="form-input" id="mDesc" placeholder="Descreva o lançamento…"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="mVal" type="number" min="0" placeholder="0,00"></div>
+        <div class="form-group"><label class="form-label">Data</label><input class="form-input" id="mDate" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Categoria</label>
+          <select class="form-input" id="mCat">
+            <option value="food">Alimentação</option>
+            <option value="transport">Transporte</option>
+            <option value="health">Saúde</option>
+            <option value="education">Educação</option>
+            <option value="entertainment">Lazer</option>
+            <option value="bills">Contas</option>
+            <option value="salary">Salário</option>
+            <option value="other">Outros</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-input" id="mStatus">
+            <option value="paid">Pago</option>
+            <option value="pending">Pendente</option>
+            <option value="overdue">Vencido</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Responsável</label>
+          <select class="form-input" id="mMember">
+            <option>João Silva</option><option>Ana Silva</option><option>Família</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Recorrência</label>
+          <select class="form-input" id="mRecur">
+            <option value="">Não recorrente</option>
+            <option value="monthly">Mensal</option>
+            <option value="weekly">Semanal</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="mNote" placeholder="Opcional…"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTx()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Lançamento
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RECURRENCE MODAL ═══════════════════════════════════════ -->
+<div class="modal-backdrop" id="recurModalBg" onclick="closeRecurModal(event)">
+  <div class="modal" style="width:540px">
+    <div class="modal-hd">
+      <span class="modal-title" id="recurModalTitle">Nova Recorrência</span>
+      <button class="modal-close" onclick="closeRecurModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="quick-type" style="margin-bottom:18px">
+        <button class="qtype-btn exp active" id="rExp" onclick="setRType('expense')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Despesa
+        </button>
+        <button class="qtype-btn inc" id="rInc" onclick="setRType('income')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Receita
+        </button>
+      </div>
+      <div class="form-group"><label class="form-label">Descrição</label><input class="form-input" id="rDesc" placeholder="Ex: Salário, Aluguel, Netflix…"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="rVal" type="number" min="0" placeholder="0,00"></div>
+        <div class="form-group"><label class="form-label">Categoria</label>
+          <select class="form-input" id="rCat">
+            <option value="food">Alimentação</option>
+            <option value="transport">Transporte</option>
+            <option value="health">Saúde</option>
+            <option value="education">Educação</option>
+            <option value="entertainment">Lazer</option>
+            <option value="bills">Contas</option>
+            <option value="salary">Salário</option>
+            <option value="other">Outros</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Frequência</label>
+          <select class="form-input" id="rFreq" onchange="toggleRecurFields()">
+            <option value="monthly">Mensal</option>
+            <option value="weekly">Semanal</option>
+            <option value="biweekly">Quinzenal</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Dia de vencimento</label>
+          <input class="form-input" id="rDay" type="number" min="1" max="28" value="5" placeholder="1-28">
+        </div>
+      </div>
+      <div class="form-row" id="rWeekRow" style="display:none">
+        <div class="form-group"><label class="form-label">Dia da semana</label>
+          <select class="form-input" id="rWeekday">
+            <option value="1">Segunda-feira</option>
+            <option value="2">Terça-feira</option>
+            <option value="3">Quarta-feira</option>
+            <option value="4">Quinta-feira</option>
+            <option value="5">Sexta-feira</option>
+          </select>
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Data de início</label><input class="form-input" id="rStart" type="date"></div>
+        <div class="form-group"><label class="form-label">Data de fim (opcional)</label><input class="form-input" id="rEnd" type="date" placeholder="Sem fim definido"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Responsável</label>
+          <select class="form-input" id="rMember"><option>João Silva</option><option>Ana Silva</option><option>Família</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Gerar lançamento</label>
+          <select class="form-input" id="rAutoGen">
+            <option value="auto">Automático (no vencimento)</option>
+            <option value="manual">Manual (confirmar cada vez)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="rNote" placeholder="Opcional…" rows="2"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeRecurModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRecur()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Recorrência
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPT ════════════════════════════════════════════════ -->
+<script>
+/* ── DATA ─────────────────────────────────────────── */
+const CAT = {
+  food:'Alimentação', transport:'Transporte', health:'Saúde',
+  education:'Educação', entertainment:'Lazer', bills:'Contas',
+  salary:'Salário', other:'Outros'
+};
+const CAT_COLOR = {
+  food:'tag-food', transport:'tag-transport', health:'tag-health',
+  education:'tag-education', entertainment:'tag-entertainment',
+  bills:'tag-bills', salary:'tag-salary', other:'tag-other'
+};
+const CAT_SVG = {
+  food:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2s-5 2-5 10"/><path d="M16 12c0 2.76 1.34 5.34 3 7"/></svg>',
+  transport:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  health:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+  education:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>',
+  entertainment:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>',
+  bills:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  salary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+  other:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+};
+
+let txFilter = 'all';
+let mType = 'expense';
+let qType = 'expense';
+let charts = {};
+
+let txs = [
+  {id:1, type:'income',  desc:'Salário — João',          cat:'salary',        value:6500, date:'2026-04-05', status:'paid'},
+  {id:2, type:'income',  desc:'Freelance Design',        cat:'other',         value:1200, date:'2026-04-08', status:'paid'},
+  {id:3, type:'income',  desc:'Aluguel — imóvel',        cat:'other',         value:700,  date:'2026-04-10', status:'paid'},
+  {id:4, type:'income',  desc:'Salário — Ana',           cat:'salary',        value:4200, date:'2026-04-20', status:'pending'},
+  {id:5, type:'expense', desc:'Supermercado Extra',      cat:'food',          value:647,  date:'2026-04-12', status:'paid'},
+  {id:6, type:'expense', desc:'Conta de Luz — ENEL',     cat:'bills',         value:312,  date:'2026-04-11', status:'paid'},
+  {id:7, type:'expense', desc:'Escola — mensalidade',    cat:'education',     value:980,  date:'2026-04-05', status:'paid'},
+  {id:8, type:'expense', desc:'Plano de Saúde',          cat:'health',        value:620,  date:'2026-04-01', status:'paid'},
+  {id:9, type:'expense', desc:'Combustível / Posto',     cat:'transport',     value:210,  date:'2026-04-14', status:'paid'},
+  {id:10,type:'expense', desc:'Netflix + Spotify',       cat:'entertainment', value:92,   date:'2026-04-07', status:'paid'},
+  {id:11,type:'expense', desc:'Internet fibra',          cat:'bills',         value:159,  date:'2026-04-01', status:'paid'},
+  {id:12,type:'expense', desc:'Farmácia — remédios',     cat:'health',        value:188,  date:'2026-04-13', status:'paid'},
+  {id:13,type:'expense', desc:'Conta de Água — SABESP',  cat:'bills',         value:98,   date:'2026-04-10', status:'pending'},
+  {id:14,type:'expense', desc:'Pão de Açúcar',           cat:'food',          value:200,  date:'2026-04-15', status:'paid'},
+  {id:15,type:'expense', desc:'IPTU parcela',            cat:'bills',         value:524,  date:'2026-04-05', status:'paid'},
+];
+
+/* ── NAVIGATION ─────────────────────────────────────── */
+const PAGE_NAMES = {
+  dashboard:'Painel', transactions:'Lançamentos', budget:'Orçamento',
+  income:'Receitas', expenses:'Despesas', reports:'Relatórios',
+  recurring:'Recorrências', whatsapp:'WhatsApp · wweb.js', settings:'Configurações'
+};
+
+function nav(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('pg-' + page).classList.add('active');
+  document.getElementById('topTitle').textContent = PAGE_NAMES[page];
+  if (btn) btn.classList.add('active');
+  renderPage(page);
+}
+
+function renderPage(p) {
+  if (p === 'dashboard') { renderRecent(); }
+  if (p === 'transactions') { renderTx(); }
+  if (p === 'budget') { renderBudget(); initBudgetChart(); }
+  if (p === 'income') { renderFiltered('tblIncome', 'income'); }
+  if (p === 'expenses') { renderFiltered('tblExpenses', 'expense'); }
+  if (p === 'reports') { initReportCharts(); renderTopExpenses(); }
+  if (p === 'recurring') { renderRecurring(); }
+  if (p === 'settings') { renderMembers(); }
+}
+
+/* ── TABLE BUILDER ────────────────────────────────── */
+function buildTable(rows) {
+  if (!rows.length) return '<tr><td colspan="6" style="text-align:center;padding:44px;color:var(--text3)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.4"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7"/><path d="M14 22H4a2 2 0 01-2-2v-4h6l2 2h8l2-2h-6"/></svg>Nenhum lançamento encontrado</td></tr>';
+  let h = `<thead><tr>
+    <th>Data</th><th>Descrição</th><th>Categoria</th>
+    <th>Status</th><th>Tipo</th><th style="text-align:right">Valor</th>
+  </tr></thead><tbody>`;
+  rows.forEach(t => {
+    const d = new Date(t.date + 'T12:00:00');
+    const ds = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+    const sign = t.type === 'income' ? '+' : '−';
+    const cls = t.type === 'income' ? 'pos' : 'neg';
+    const typeLbl = t.type === 'income' ? 'Receita' : 'Despesa';
+    const typeColor = t.type === 'income' ? 'var(--emerald)' : 'var(--rose)';
+    const statusLabel = {paid:'Pago', pending:'Pendente', overdue:'Vencido'}[t.status] || t.status;
+    h += `<tr>
+      <td class="tbl-date">${ds}</td>
+      <td class="tbl-desc">${t.desc}</td>
+      <td><span class="tag ${CAT_COLOR[t.cat]}">${CAT_SVG[t.cat]}${CAT[t.cat]}</span></td>
+      <td><span class="status"><span class="dot dot-${t.status}"></span>${statusLabel}</span></td>
+      <td><span style="font-size:11.5px;font-weight:500;color:${typeColor}">${typeLbl}</span></td>
+      <td style="text-align:right"><span class="amount ${cls}">${sign} R$ ${t.value.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>
+    </tr>`;
+  });
+  return h + '</tbody>';
+}
+
+function renderRecent() {
+  const rows = [...txs].sort((a,b)=>b.id-a.id).slice(0,7);
+  document.getElementById('tblRecent').innerHTML = buildTable(rows);
+}
+
+function renderTx() {
+  const q = (document.getElementById('txSearch')?.value || '').toLowerCase();
+  let rows = [...txs].sort((a,b)=>b.id-a.id);
+  if (txFilter !== 'all') rows = rows.filter(t => t.type === txFilter);
+  if (q) rows = rows.filter(t => t.desc.toLowerCase().includes(q) || CAT[t.cat].toLowerCase().includes(q));
+  document.getElementById('tblAll').innerHTML = buildTable(rows);
+}
+
+function filterTx(type, btn) {
+  txFilter = type;
+  document.querySelectorAll('#pg-transactions .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTx();
+}
+
+function renderFiltered(id, type) {
+  const rows = txs.filter(t => t.type === type).sort((a,b)=>b.id-a.id);
+  document.getElementById(id).innerHTML = buildTable(rows);
+}
+
+/* ── STATS ────────────────────────────────────────── */
+function updateStats() {
+  const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.value,0);
+  const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.value,0);
+  const fmt = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:0});
+  document.getElementById('statIncome').textContent = fmt(inc);
+  document.getElementById('statExpense').textContent = fmt(exp);
+  document.getElementById('statBalance').textContent = fmt(inc - exp);
+}
+
+/* ── BUDGET ────────────────────────────────────────── */
+const budgets = [
+  {cat:'food',limit:1200},{cat:'transport',limit:400},{cat:'health',limit:900},
+  {cat:'education',limit:1100},{cat:'entertainment',limit:200},{cat:'bills',limit:700}
+];
+
+function renderBudget() {
+  let h = '';
+  budgets.forEach(b => {
+    const spent = txs.filter(t=>t.type==='expense'&&t.cat===b.cat).reduce((s,t)=>s+t.value,0);
+    const pct = Math.min(Math.round((spent/b.limit)*100),100);
+    const cl = pct >= 90 ? 'prog-r' : pct >= 70 ? 'prog-a' : 'prog-g';
+    h += `<div class="budget-item">
+      <div class="budget-meta">
+        <div class="budget-name">${CAT_SVG[b.cat]}${CAT[b.cat]}</div>
+        <div class="budget-val">R$ ${spent.toLocaleString('pt-BR')} / R$ ${b.limit.toLocaleString('pt-BR')}</div>
+      </div>
+      <div class="prog-bar"><div class="prog-fill ${cl}" style="width:${pct}%"></div></div>
+      <div class="prog-pct">${pct}% utilizado</div>
+    </div>`;
+  });
+  document.getElementById('budgetBars').innerHTML = h;
+}
+
+function renderTopExpenses() {
+  const top = txs.filter(t=>t.type==='expense').sort((a,b)=>b.value-a.value).slice(0,6);
+  document.getElementById('tblTopExp').innerHTML = buildTable(top);
+}
+
+/* ── MEMBERS ──────────────────────────────────────── */
+function renderMembers() {
+  const members = [
+    {name:'João Silva', role:'Administrador', ini:'JS', color:'#4F46E5'},
+    {name:'Ana Silva',  role:'Colaboradora',  ini:'AS', color:'#E11D48'},
+    {name:'Pedro Silva',role:'Visualizador',  ini:'PS', color:'#059669'},
+  ];
+  document.getElementById('membersWrap').innerHTML = members.map(m =>
+    `<div class="member-row">
+      <div class="member-av" style="background:${m.color}">${m.ini}</div>
+      <div><div class="member-name">${m.name}</div><div class="member-role">${m.role}</div></div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto;color:var(--text3);cursor:pointer"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </div>`).join('');
+}
+
+/* ── CHART HELPERS ─────────────────────────────────── */
+function gc() {
+  const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    grid: dk ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    text: dk ? '#5C5B54' : '#9C9B93',
+    surface: dk ? '#1A1916' : '#FFFFFF'
+  };
+}
+
+function mkChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  charts[id] = new Chart(el, config);
+}
+
+function initMainCharts() {
+  const c = gc();
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+  Chart.defaults.font.size = 11;
+
+  mkChart('chartCashflow', {
+    type: 'bar',
+    data: {
+      labels: ['Nov','Dez','Jan','Fev','Mar','Abr'],
+      datasets: [
+        { label:'Receitas', data:[7200,8100,7800,8600,7400,8400], backgroundColor:'rgba(5,150,105,0.75)', borderRadius:5, borderSkipped:false },
+        { label:'Despesas', data:[5100,6200,4900,5800,5400,5230], backgroundColor:'rgba(225,29,72,0.7)', borderRadius:5, borderSkipped:false }
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10,font:{size:11}}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.text}}, y:{grid:{color:c.grid},ticks:{color:c.text,callback:v=>'R$'+v/1e3+'k'}} } }
+  });
+
+  mkChart('chartDoughnut', {
+    type: 'doughnut',
+    data: {
+      labels:['Alimentação','Contas','Educação','Saúde','Transporte','Lazer'],
+      datasets:[{ data:[847,1093,980,808,210,92],
+        backgroundColor:['#D97706','#4F46E5','#7C3AED','#E11D48','#0284C7','#0D9488'],
+        borderWidth:0, hoverOffset:8 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{legend:{position:'right',labels:{color:c.text,boxWidth:10,font:{size:11},padding:10}}} }
+  });
+}
+
+function initBudgetChart() {
+  const c = gc();
+  mkChart('chartBudget', {
+    type:'line',
+    data:{
+      labels:['Jan','Fev','Mar','Abr'],
+      datasets:[
+        { label:'Orçado', data:[5500,5500,5500,5500], borderColor:c.text, borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false },
+        { label:'Realizado', data:[4900,5800,5400,4030], borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,.1)', borderWidth:2, pointRadius:4, pointBackgroundColor:'#4F46E5', fill:true, tension:.4 }
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.text}}, y:{grid:{color:c.grid},ticks:{color:c.text,callback:v=>'R$'+v/1e3+'k'}} } }
+  });
+}
+
+function initReportCharts() {
+  const c = gc();
+  mkChart('rptChart1', {
+    type:'bar',
+    data:{ labels:['Set','Out','Nov','Dez','Jan','Fev','Mar','Abr'],
+      datasets:[
+        {label:'Receitas', data:[7100,7500,7200,8100,7800,8600,7400,8400], backgroundColor:'rgba(5,150,105,.75)', borderRadius:4},
+        {label:'Despesas', data:[4900,5300,5100,6200,4900,5800,5400,4030], backgroundColor:'rgba(225,29,72,.7)', borderRadius:4}
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.text}}, y:{grid:{color:c.grid},ticks:{color:c.text}} } }
+  });
+  mkChart('rptChart2', {
+    type:'line',
+    data:{ labels:['Set','Out','Nov','Dez','Jan','Fev','Mar','Abr'],
+      datasets:[{label:'Poupança', data:[2200,2200,2100,1900,2900,2800,2000,4370],
+        borderColor:'#7C3AED', backgroundColor:'rgba(124,58,237,.1)', borderWidth:2.5,
+        fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#7C3AED'}]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.text}}, y:{grid:{color:c.grid},ticks:{color:c.text}} } }
+  });
+  mkChart('rptChart3', {
+    type:'polarArea',
+    data:{ labels:['Alimentação','Contas','Educação','Saúde','Transporte','Lazer'],
+      datasets:[{data:[847,1093,980,808,210,92],
+        backgroundColor:['rgba(217,119,6,.7)','rgba(79,70,229,.7)','rgba(124,58,237,.7)','rgba(225,29,72,.7)','rgba(2,132,199,.7)','rgba(13,148,136,.7)']}]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10}}} }
+  });
+  mkChart('rptChart4', {
+    type:'bar',
+    data:{ labels:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+      datasets:[{label:'Despesas 2026', data:[4900,5800,5400,4030,null,null,null,null,null,null,null,null],
+        backgroundColor:'rgba(225,29,72,.65)', borderRadius:4}]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,boxWidth:10}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.text}}, y:{grid:{color:c.grid},ticks:{color:c.text}} } }
+  });
+}
+
+/* ── MODAL ────────────────────────────────────────── */
+function openModal(type) {
+  document.getElementById('modalBg').classList.add('open');
+  document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+  if (type) setMType(type);
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalBg')) {
+    document.getElementById('modalBg').classList.remove('open');
+    ['mDesc','mVal','mNote'].forEach(id => document.getElementById(id).value = '');
+  }
+}
+function setMType(t) {
+  mType = t;
+  document.getElementById('mExp').classList.toggle('active', t === 'expense');
+  document.getElementById('mInc').classList.toggle('active', t === 'income');
+}
+function setQType(t) {
+  qType = t;
+  document.getElementById('qExp').classList.toggle('active', t === 'expense');
+  document.getElementById('qInc').classList.toggle('active', t === 'income');
+}
+
+function saveTx() {
+  const desc = document.getElementById('mDesc').value.trim();
+  const val = parseFloat(document.getElementById('mVal').value);
+  if (!desc || !val || isNaN(val)) { toast('Preencha descrição e valor.', 'err'); return; }
+  txs.push({
+    id: Date.now(), type: mType, desc,
+    cat: document.getElementById('mCat').value,
+    value: val,
+    date: document.getElementById('mDate').value,
+    status: document.getElementById('mStatus').value
+  });
+  closeModal();
+  updateStats();
+  renderRecent();
+  toast((mType === 'income' ? 'Receita' : 'Despesa') + ' adicionada!', 'ok');
+}
+
+function quickAdd() {
+  const desc = document.getElementById('qDesc').value.trim();
+  const val = parseFloat(document.getElementById('qVal').value);
+  if (!desc || !val || isNaN(val)) { toast('Preencha descrição e valor.', 'err'); return; }
+  txs.push({id:Date.now(), type:qType, desc, cat:document.getElementById('qCat').value, value:val, date:new Date().toISOString().split('T')[0], status:'paid'});
+  document.getElementById('qDesc').value = '';
+  document.getElementById('qVal').value = '';
+  updateStats();
+  renderRecent();
+  toast('Lançamento adicionado!', 'ok');
+}
+
+/* ── THEME ───────────────────────────────────────── */
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeLbl').textContent = isDark ? 'Tema Claro' : 'Tema Escuro';
+  document.getElementById('bulbSvg').style.color = isDark ? '' : 'var(--text3)';
+  setTimeout(() => {
+    Object.keys(charts).forEach(k => charts[k].destroy());
+    charts = {};
+    initMainCharts();
+    const active = document.querySelector('.page.active')?.id?.replace('pg-','');
+    if (active === 'budget') initBudgetChart();
+    if (active === 'reports') initReportCharts();
+  }, 50);
+}
+
+/* ── WHATSAPP SIM ─────────────────────────────────── */
+const waReplies = {
+  '/ajuda': () => `📋 <b>Comandos disponíveis:</b><br><br>
+    <b>despesa</b> [valor] [desc] — registra gasto<br>
+    <b>receita</b> [valor] [desc] — registra entrada<br>
+    <b>/saldo</b> — consulta saldo atual<br>
+    <b>/resumo</b> — relatório do mês<br>
+    <b>/ultimos</b> — últimos 5 lançamentos`,
+  '/saldo': () => {
+    const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.value,0);
+    const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.value,0);
+    return `💰 <b>Saldo atual:</b> R$ ${(inc-exp).toLocaleString('pt-BR',{minimumFractionDigits:2})}<br><br>
+    ✅ Receitas: R$ ${inc.toLocaleString('pt-BR')}<br>
+    ❌ Despesas: R$ ${exp.toLocaleString('pt-BR')}`;
+  },
+  '/resumo': () => {
+    const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.value,0);
+    const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.value,0);
+    const pct = Math.round(((inc-exp)/inc)*100);
+    return `📊 <b>Resumo — Abril 2026</b><br><br>
+    ✅ Receitas: R$ ${inc.toLocaleString('pt-BR')}<br>
+    ❌ Despesas: R$ ${exp.toLocaleString('pt-BR')}<br>
+    💾 Saldo: R$ ${(inc-exp).toLocaleString('pt-BR')}<br>
+    📈 Taxa poupança: ${pct}%`;
+  },
+  '/ultimos': () => {
+    const last = [...txs].sort((a,b)=>b.id-a.id).slice(0,5)
+      .map(t=>`${t.type==='income'?'↑':'↓'} <b>${t.desc}</b> — R$ ${t.value.toLocaleString('pt-BR')}`).join('<br>');
+    return `📋 <b>Últimos lançamentos:</b><br><br>${last}`;
+  }
+};
+
+function sendWa() {
+  const inp = document.getElementById('waIn');
+  const msg = inp.value.trim(); if (!msg) return;
+  addWaMsg(msg, 'out');
+  inp.value = '';
+  setTimeout(() => {
+    const parts = msg.split(' ');
+    const cmd = parts[0].toLowerCase();
+    let reply = '';
+    if (waReplies[cmd]) {
+      reply = waReplies[cmd]();
+    } else if (cmd === 'despesa') {
+      const val = parseFloat(parts[1]);
+      const desc = parts.slice(2).join(' ') || 'Lançamento via WhatsApp';
+      if (val && !isNaN(val)) {
+        txs.push({id:Date.now(), type:'expense', desc, cat:'other', value:val, date:new Date().toISOString().split('T')[0], status:'paid'});
+        updateStats(); renderRecent();
+        reply = `✅ <b>Despesa registrada!</b><br><br>Descrição: ${desc}<br>Valor: R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}<br>Data: hoje`;
+      } else { reply = '⚠️ Formato: <b>despesa [valor] [descrição]</b><br>Ex: despesa 50 mercado'; }
+    } else if (cmd === 'receita') {
+      const val = parseFloat(parts[1]);
+      const desc = parts.slice(2).join(' ') || 'Receita via WhatsApp';
+      if (val && !isNaN(val)) {
+        txs.push({id:Date.now(), type:'income', desc, cat:'other', value:val, date:new Date().toISOString().split('T')[0], status:'paid'});
+        updateStats(); renderRecent();
+        reply = `✅ <b>Receita registrada!</b><br><br>Descrição: ${desc}<br>Valor: R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}<br>Data: hoje`;
+      } else { reply = '⚠️ Formato: <b>receita [valor] [descrição]</b><br>Ex: receita 3000 salario'; }
+    } else {
+      reply = `Comando não reconhecido: "<b>${cmd}</b>"<br>Digite <b>/ajuda</b> para ver os comandos.`;
+    }
+    addWaMsg(reply, 'in');
+  }, 500);
+}
+
+function addWaMsg(text, dir) {
+  const c = document.getElementById('waMsgs');
+  const now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const d = document.createElement('div');
+  d.className = 'wa-msg ' + dir;
+  d.innerHTML = text + `<div class="wa-ts">${now}</div>`;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function setWaIn(v) {
+  document.getElementById('waIn').value = v;
+  document.getElementById('waIn').focus();
+}
+
+/* ── TOAST ────────────────────────────────────────── */
+function toast(msg, type='ok') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const icon = type === 'ok'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  const el = document.createElement('div');
+  el.className = 'toast t-' + type;
+  el.innerHTML = icon + `<span>${msg}</span>`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.classList.add('hide'); setTimeout(()=>el.remove(), 260); }, 2800);
+}
+
+/* ── RECURRING ─────────────────────────────────────────── */
+let recurFilter = 'all';
+let editRecurId = null;
+let rType = 'expense';
+
+const FREQ_LABEL = {monthly:'Mensal', weekly:'Semanal', biweekly:'Quinzenal', yearly:'Anual'};
+const FREQ_ICON = {
+  monthly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  weekly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  biweekly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  yearly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>'
+};
+
+let recurrences = [
+  {id:1, type:'income',  desc:'Salário — João',       cat:'salary',        value:6500, freq:'monthly',   day:5,  start:'2025-01-05', end:null,   status:'active',  autoGen:true,  member:'João Silva'},
+  {id:2, type:'income',  desc:'Salário — Ana',        cat:'salary',        value:4200, freq:'monthly',   day:20, start:'2025-01-20', end:null,   status:'active',  autoGen:true,  member:'Ana Silva'},
+  {id:3, type:'income',  desc:'Aluguel — imóvel',     cat:'other',         value:700,  freq:'monthly',   day:10, start:'2024-06-10', end:null,   status:'active',  autoGen:true,  member:'Família'},
+  {id:4, type:'expense', desc:'Plano de Saúde',       cat:'health',        value:620,  freq:'monthly',   day:1,  start:'2024-03-01', end:null,   status:'active',  autoGen:true,  member:'Família'},
+  {id:5, type:'expense', desc:'Escola — mensalidade', cat:'education',     value:980,  freq:'monthly',   day:5,  start:'2024-02-05', end:null,   status:'active',  autoGen:true,  member:'Família'},
+  {id:6, type:'expense', desc:'Internet fibra',       cat:'bills',         value:159,  freq:'monthly',   day:1,  start:'2023-08-01', end:null,   status:'active',  autoGen:true,  member:'Família'},
+  {id:7, type:'expense', desc:'Netflix + Spotify',    cat:'entertainment', value:92,   freq:'monthly',   day:7,  start:'2023-01-07', end:null,   status:'active',  autoGen:true,  member:'Família'},
+  {id:8, type:'expense', desc:'Academia — mensalidade',cat:'health',       value:120,  freq:'monthly',   day:15, start:'2025-04-15', end:null,   status:'paused',  autoGen:false, member:'João Silva'},
+  {id:9, type:'expense', desc:'IPTU — parcela',       cat:'bills',         value:524,  freq:'monthly',   day:5,  start:'2026-01-05', end:'2026-12-05', status:'active', autoGen:true, member:'Família'},
+  {id:10,type:'expense', desc:'Seguro do carro',      cat:'transport',     value:320,  freq:'yearly',    day:15, start:'2025-03-15', end:null,   status:'active',  autoGen:false, member:'João Silva'},
+  {id:11,type:'income',  desc:'13º salário — João',   cat:'salary',        value:6500, freq:'yearly',    day:20, start:'2024-12-20', end:null,   status:'active',  autoGen:false, member:'João Silva'},
+  {id:12,type:'expense', desc:'Supermercado semanal', cat:'food',          value:250,  freq:'weekly',    day:6,  start:'2026-01-01', end:null,   status:'active',  autoGen:false, member:'Família'},
+];
+
+function nextOccurrence(r) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(r.start + 'T12:00:00');
+  let d = new Date(today);
+  if (r.freq === 'monthly' || r.freq === 'yearly') {
+    d.setDate(r.day);
+    if (d <= today) {
+      if (r.freq === 'monthly') d.setMonth(d.getMonth() + 1);
+      else d.setFullYear(d.getFullYear() + 1);
+    }
+  } else if (r.freq === 'weekly') {
+    const dow = r.day % 7;
+    d = new Date(today);
+    const diff = (dow - d.getDay() + 7) % 7 || 7;
+    d.setDate(d.getDate() + diff);
+  } else if (r.freq === 'biweekly') {
+    d = new Date(start);
+    while (d <= today) d.setDate(d.getDate() + 14);
+  }
+  if (r.end && d > new Date(r.end + 'T12:00:00')) return null;
+  return d;
+}
+
+function daysUntil(d) {
+  if (!d) return Infinity;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+
+function renderRecurring() {
+  renderRecurSummary();
+  renderRecurCards();
+  renderUpcoming();
+  initRecurProjChart();
+  updateRecurBadge();
+}
+
+function renderRecurSummary() {
+  const active = recurrences.filter(r=>r.status==='active');
+  const monthlyInc = active.filter(r=>r.type==='income').reduce((s,r)=>{
+    if(r.freq==='monthly') return s+r.value;
+    if(r.freq==='yearly') return s+r.value/12;
+    if(r.freq==='weekly') return s+r.value*4.33;
+    if(r.freq==='biweekly') return s+r.value*2.17;
+    return s;
+  },0);
+  const monthlyExp = active.filter(r=>r.type==='expense').reduce((s,r)=>{
+    if(r.freq==='monthly') return s+r.value;
+    if(r.freq==='yearly') return s+r.value/12;
+    if(r.freq==='weekly') return s+r.value*4.33;
+    if(r.freq==='biweekly') return s+r.value*2.17;
+    return s;
+  },0);
+  const upcoming30 = recurrences.filter(r=>{
+    if(r.status!=='active') return false;
+    const d=daysUntil(nextOccurrence(r)); return d>=0&&d<=30;
+  }).length;
+  const fmt = v=>'R$ '+Math.round(v).toLocaleString('pt-BR');
+  document.getElementById('recurSummary').innerHTML = `
+    <div class="recur-sum-card"><div class="rsc-label">Receitas fixas/mês</div><div class="rsc-val pos">${fmt(monthlyInc)}</div><div class="rsc-sub">equivalente mensal</div></div>
+    <div class="recur-sum-card"><div class="rsc-label">Despesas fixas/mês</div><div class="rsc-val neg">${fmt(monthlyExp)}</div><div class="rsc-sub">equivalente mensal</div></div>
+    <div class="recur-sum-card"><div class="rsc-label">Saldo recorrente</div><div class="rsc-val ${monthlyInc-monthlyExp>=0?'pos':'neg'}">${fmt(monthlyInc-monthlyExp)}</div><div class="rsc-sub">projeção mensal</div></div>
+    <div class="recur-sum-card"><div class="rsc-label">Próximos 30 dias</div><div class="rsc-val">${upcoming30}</div><div class="rsc-sub">vencimentos previstos</div></div>`;
+}
+
+function renderRecurCards() {
+  const q = (document.getElementById('recurSearch')?.value||'').toLowerCase();
+  let rows = [...recurrences];
+  if(recurFilter==='expense') rows=rows.filter(r=>r.type==='expense');
+  else if(recurFilter==='income') rows=rows.filter(r=>r.type==='income');
+  else if(recurFilter==='active') rows=rows.filter(r=>r.status==='active');
+  else if(recurFilter==='paused') rows=rows.filter(r=>r.status==='paused');
+  if(q) rows=rows.filter(r=>r.desc.toLowerCase().includes(q)||CAT[r.cat].toLowerCase().includes(q));
+
+  if(!rows.length){
+    document.getElementById('recurGrid').innerHTML=`<div class="empty" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg><p>Nenhuma recorrência encontrada</p></div>`;
+    return;
+  }
+
+  document.getElementById('recurGrid').innerHTML = rows.map(r => {
+    const next = nextOccurrence(r);
+    const days = daysUntil(next);
+    const nextStr = next ? next.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : 'Encerrada';
+    const urgClass = days<=3?'urgent':days<=7?'soon':'';
+    const daysStr = next?(days===0?'Hoje':days===1?'Amanhã':`Em ${days} dias`):'—';
+    const badgeCls = r.status==='active'?'rb-active':r.status==='paused'?'rb-paused':'rb-ended';
+    const badgeLbl = r.status==='active'?'Ativa':r.status==='paused'?'Pausada':'Encerrada';
+    const icoClass = r.type==='expense'?'rci-exp':'rci-inc';
+    const valClass = r.type==='expense'?'neg':'pos';
+    const sign = r.type==='expense'?'−':'+';
+    return `<div class="recur-card">
+      <div class="recur-card-top">
+        <div class="recur-card-icon ${icoClass}">${FREQ_ICON[r.freq]}</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="recur-toggle-btn" onclick="toggleRecur(${r.id})">${r.status==='active'?'Pausar':'Ativar'}</button>
+          <button class="recur-menu-btn" onclick="editRecur(${r.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="recur-menu-btn" onclick="deleteRecur(${r.id})" style="color:var(--rose)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="recur-name">${r.desc}</div>
+      <div class="recur-cat"><span class="tag ${CAT_COLOR[r.cat]}">${CAT_SVG[r.cat]}${CAT[r.cat]}</span></div>
+      <div class="recur-val ${valClass}">${sign} R$ ${r.value.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="recur-meta">
+        <div class="recur-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          ${FREQ_LABEL[r.freq]}${r.freq==='monthly'||r.freq==='yearly'?' — dia '+r.day:''}
+        </div>
+        <div class="recur-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ${nextStr}
+        </div>
+        <div class="recur-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          ${r.member}
+        </div>
+      </div>
+      <div class="recur-footer">
+        <span class="recur-badge ${badgeCls}">${badgeLbl}</span>
+        <span class="recur-next ${urgClass}">${daysStr}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderUpcoming() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const items = recurrences
+    .filter(r=>r.status==='active')
+    .map(r=>({r, next:nextOccurrence(r)}))
+    .filter(o=>o.next && daysUntil(o.next)>=0 && daysUntil(o.next)<=30)
+    .sort((a,b)=>a.next-b.next);
+
+  if(!items.length){
+    document.getElementById('upcomingList').innerHTML=`<div class="empty"><p>Nenhum vencimento nos próximos 30 dias</p></div>`;
+    return;
+  }
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  document.getElementById('upcomingList').innerHTML = items.map(({r,next})=>{
+    const days=daysUntil(next);
+    const daysStr=days===0?'Hoje':days===1?'Amanhã':`${days} dias`;
+    const urgColor=days<=3?'var(--rose)':days<=7?'var(--amber)':'var(--text3)';
+    const dayClass=r.type==='expense'?'upd-exp':'upd-inc';
+    const valClass=r.type==='expense'?'neg':'pos';
+    const sign=r.type==='expense'?'−':'+';
+    return `<div class="upcoming-item">
+      <div class="upcoming-day ${dayClass}">
+        <div class="upcoming-day-num">${next.getDate()}</div>
+        <div class="upcoming-day-mon">${months[next.getMonth()]}</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-name">${r.desc}</div>
+        <div class="upcoming-sub">
+          <span class="tag ${CAT_COLOR[r.cat]}" style="padding:1px 7px;font-size:10.5px">${CAT[r.cat]}</span>
+          <span>·</span>
+          <span>${FREQ_LABEL[r.freq]}</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="upcoming-amount ${valClass}">${sign} R$ ${r.value.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        <div style="font-size:11px;color:${urgColor};font-weight:${days<=7?'600':'400'};margin-top:2px">${daysStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function initRecurProjChart() {
+  const c = gc();
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const active = recurrences.filter(r=>r.status==='active');
+  const incPerMonth = active.filter(r=>r.type==='income').reduce((s,r)=>{
+    if(r.freq==='monthly') return s+r.value;
+    if(r.freq==='yearly') return s+r.value/12;
+    if(r.freq==='weekly') return s+r.value*4.33;
+    return s;
+  },0);
+  const expPerMonth = active.filter(r=>r.type==='expense').reduce((s,r)=>{
+    if(r.freq==='monthly') return s+r.value;
+    if(r.freq==='yearly') return s+r.value/12;
+    if(r.freq==='weekly') return s+r.value*4.33;
+    return s;
+  },0);
+  const incData = months.map(()=>Math.round(incPerMonth));
+  const expData = months.map(()=>Math.round(expPerMonth));
+  mkChart('chartRecurProj',{
+    type:'bar',
+    data:{
+      labels:months,
+      datasets:[
+        {label:'Receitas fixas',data:incData,backgroundColor:'rgba(5,150,105,.7)',borderRadius:4,borderSkipped:false},
+        {label:'Despesas fixas',data:expData,backgroundColor:'rgba(225,29,72,.65)',borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.text,boxWidth:10}}},
+      scales:{x:{grid:{color:c.grid},ticks:{color:c.text}},y:{grid:{color:c.grid},ticks:{color:c.text,callback:v=>'R$'+v/1e3+'k'}}}}
+  });
+}
+
+function setRecurFilter(f, btn) {
+  recurFilter=f;
+  document.querySelectorAll('#recurTabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRecurCards();
+}
+
+function toggleRecur(id) {
+  const r=recurrences.find(r=>r.id===id);
+  if(!r) return;
+  r.status = r.status==='active'?'paused':'active';
+  renderRecurring();
+  toast(r.status==='active'?`"${r.desc}" ativada!`:`"${r.desc}" pausada.`, r.status==='active'?'ok':'ok');
+}
+
+function deleteRecur(id) {
+  const r=recurrences.find(r=>r.id===id);
+  if(!r || !confirm(`Excluir recorrência "${r.desc}"?`)) return;
+  recurrences=recurrences.filter(r=>r.id!==id);
+  renderRecurring();
+  toast('Recorrência excluída.','ok');
+}
+
+function editRecur(id) {
+  const r=recurrences.find(r=>r.id===id);
+  if(!r) return;
+  editRecurId=id;
+  openRecurModal();
+  document.getElementById('recurModalTitle').textContent='Editar Recorrência';
+  setRType(r.type);
+  document.getElementById('rDesc').value=r.desc;
+  document.getElementById('rVal').value=r.value;
+  document.getElementById('rCat').value=r.cat;
+  document.getElementById('rFreq').value=r.freq;
+  document.getElementById('rDay').value=r.day;
+  document.getElementById('rStart').value=r.start;
+  document.getElementById('rEnd').value=r.end||'';
+  document.getElementById('rMember').value=r.member;
+  document.getElementById('rAutoGen').value=r.autoGen?'auto':'manual';
+  toggleRecurFields();
+}
+
+function updateRecurBadge() {
+  const due = recurrences.filter(r=>{
+    if(r.status!=='active') return false;
+    const d=daysUntil(nextOccurrence(r)); return d>=0&&d<=7;
+  }).length;
+  const badge=document.getElementById('recurBadge');
+  if(badge){badge.style.display=due?'':'none';badge.textContent=due;}
+}
+
+/* Recurrence modal */
+function openRecurModal(type) {
+  editRecurId=null;
+  document.getElementById('recurModalTitle').textContent='Nova Recorrência';
+  document.getElementById('recurModalBg').classList.add('open');
+  document.getElementById('rStart').value=new Date().toISOString().split('T')[0];
+  document.getElementById('rDesc').value='';
+  document.getElementById('rVal').value='';
+  document.getElementById('rNote').value='';
+  document.getElementById('rEnd').value='';
+  if(type) setRType(type);
+}
+function closeRecurModal(e) {
+  if(!e||e.target===document.getElementById('recurModalBg'))
+    document.getElementById('recurModalBg').classList.remove('open');
+}
+function setRType(t) {
+  rType=t;
+  document.getElementById('rExp').classList.toggle('active',t==='expense');
+  document.getElementById('rInc').classList.toggle('active',t==='income');
+}
+function toggleRecurFields() {
+  const freq=document.getElementById('rFreq').value;
+  document.getElementById('rWeekRow').style.display=freq==='weekly'?'grid':'none';
+  document.getElementById('rDay').parentElement.style.display=freq==='weekly'?'none':'block';
+}
+function saveRecur() {
+  const desc=document.getElementById('rDesc').value.trim();
+  const val=parseFloat(document.getElementById('rVal').value);
+  if(!desc||!val||isNaN(val)){toast('Preencha descrição e valor.','err');return;}
+  const obj = {
+    id: editRecurId || Date.now(),
+    type: rType,
+    desc,
+    cat: document.getElementById('rCat').value,
+    value: val,
+    freq: document.getElementById('rFreq').value,
+    day: parseInt(document.getElementById('rDay').value)||5,
+    start: document.getElementById('rStart').value,
+    end: document.getElementById('rEnd').value||null,
+    status: 'active',
+    autoGen: document.getElementById('rAutoGen').value==='auto',
+    member: document.getElementById('rMember').value,
+    note: document.getElementById('rNote').value
+  };
+  if(editRecurId) {
+    const idx=recurrences.findIndex(r=>r.id===editRecurId);
+    if(idx!==-1) recurrences[idx]=obj;
+  } else {
+    recurrences.push(obj);
+  }
+  closeRecurModal();
+  renderRecurring();
+  toast(editRecurId?'Recorrência atualizada!':'Recorrência criada!','ok');
+}
+
+/* Auto-generate today's recurring transactions */
+function autoGenRecurring() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  recurrences.filter(r=>r.autoGen&&r.status==='active').forEach(r=>{
+    const next=nextOccurrence(r);
+    if(next && daysUntil(next)===0) {
+      const alreadyExists=txs.some(t=>t.desc===r.desc&&t.date===today.toISOString().split('T')[0]&&t.recurId===r.id);
+      if(!alreadyExists) {
+        txs.push({id:Date.now()+Math.random(),type:r.type,desc:r.desc,cat:r.cat,value:r.value,date:today.toISOString().split('T')[0],status:'paid',recurId:r.id});
+      }
+    }
+  });
+  updateStats();
+}
+
+/* ── INIT ─────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  updateStats();
+  renderRecent();
+  autoGenRecurring();
+  updateRecurBadge();
+  setTimeout(initMainCharts, 80);
+});
+</script>
+</body>
+</html>
